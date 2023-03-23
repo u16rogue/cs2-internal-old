@@ -1,0 +1,10 @@
+build/
+.cache/
+out/
+CMakeSettings.json
+.vscode/
+.vs/
+
+deps/kahel-s2kit
+deps/metapp
+deps/kahel-winpe

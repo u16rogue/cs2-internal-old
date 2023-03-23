@@ -1,0 +1,12 @@
+[submodule "deps/kahel-winpe"]
+	path = deps/kahel-winpe
+	url = git@github.com:u16rogue/kahel-winpe.git
+	shallow = true
+[submodule "deps/kahel-s2kit"]
+	path = deps/kahel-s2kit
+	url = git@github.com:u16rogue/kahel-s2kit.git
+	shallow = true
+[submodule "deps/metapp"]
+	path = deps/metapp
+	url = git@github.com:u16rogue/metapp.git
+	shallow = true
