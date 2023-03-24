@@ -6,6 +6,9 @@ add_library(
   ${PROJECT_NAME}
   SHARED
   "main.cpp"
+
+  "hooks.hpp"
+  "hooks.cpp"
 )
 
 set_target_properties(
@@ -22,4 +25,6 @@ target_link_libraries(
   PRIVATE
   metapp
   common
+  minhook
+  # kahel_winpe
 )

@@ -14,9 +14,11 @@ endif()
 
 project(cs2internal)
 
-add_subdirectory("deps/kahel-s2kit")
+#add_subdirectory("deps/kahel-s2kit")
+#add_subdirectory("deps/kahel-winpe")
 add_subdirectory("deps/metapp")
+add_subdirectory("deps/minhook")
 
 add_subdirectory("common")
-add_subdirectory("loader")
 add_subdirectory("client")
+add_subdirectory("loader")

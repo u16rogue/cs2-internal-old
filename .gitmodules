@@ -10,3 +10,7 @@
 	path = deps/metapp
 	url = git@github.com:u16rogue/metapp.git
 	shallow = true
+[submodule "deps/minhook"]
+	path = deps/minhook
+	url = https://github.com/TsudaKageyu/minhook.git
+	shallow = true

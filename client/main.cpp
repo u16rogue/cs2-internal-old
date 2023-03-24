@@ -3,6 +3,15 @@
 #include <common/types.hpp>
 #include <cstdio>
 #include <metapp/metapp.hpp>
+// #include <kahel-winpe/kahel-winpe.hpp>
+
+#include "hooks.hpp"
+
+#if defined(CS2INT_COMMON_LOGGING) && CS2INT_COMMON_LOGGING == 1
+#define IS_LOGGING(...)
+#else
+#define IS_LOGGING(...) (void)[]()
+#endif
 
 struct intfreg {
   void * (*create)(void);
@@ -10,16 +19,8 @@ struct intfreg {
   intfreg *    next;
 };
 
-auto WINAPI init_thread(LPVOID arg) -> DWORD {
-#if defined(CS2INT_COMMON_LOGGING) && CS2INT_COMMON_LOGGING == 1
-  {
-    AllocConsole();
-    FILE * f;
-    freopen_s(&f, "CONOUT$", "w", stdout);
-  }
-#endif
-
-  const auto dump_module_interface = [](const char * mname) {
+static auto dump_interface() -> void {
+const auto dump_module_interface = [](const char * mname) {
     HMODULE hm = GetModuleHandleA(mname);
     if (!hm) {
       cs2log("{} not found.", mname);
@@ -39,27 +40,44 @@ auto WINAPI init_thread(LPVOID arg) -> DWORD {
 
     intfreg * intf = *reinterpret_cast<intfreg **>((createintf_export + 0x7) + displacement);
     for (; intf; intf = intf->next) {
-      cs2log("\nInteface: {}", intf->name);
+      cs2log("\tInteface: {} @ {}", intf->name, intf->create());
     }
 
     return;
   };
 
   cs2log("Start dump..."); 
-  dump_module_interface("client.dll");
-  dump_module_interface("engine2.dll");
+  for (auto m : {
+      "client.dll", "engine2.dll", "panorama.dll", "panoramauiclient.dll"
+    }) {
+    dump_module_interface(m);
+  }
+}
+
+
+static auto WINAPI init_thread(LPVOID arg) -> DWORD {
+  IS_LOGGING() {
+    AllocConsole();
+    FILE * f;
+    freopen_s(&f, "CONOUT$", "w", stdout);
+    dump_interface();
+  };
+
+  hooks::install();
 
   return 0;
 }
 
 auto WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved) -> BOOL {
   if (reason == DLL_PROCESS_ATTACH) {
+    DisableThreadLibraryCalls(instance);
     HANDLE h = CreateThread(NULL, NULL, init_thread, instance, NULL, NULL);
     mpp_defer { CloseHandle(h); };
   } else if (reason == DLL_PROCESS_DETACH) {
-#if defined(CS2INT_COMMON_LOGGING) && CS2INT_COMMON_LOGGING == 1
-    FreeConsole();
-#endif
+    hooks::uninstall();
+    IS_LOGGING() { FreeConsole(); };
   }
   return TRUE;
 }
+
+#undef IS_LOGGING
