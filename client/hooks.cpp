@@ -29,8 +29,8 @@ def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, fl
   return true;
 }
 
-def_hk(HRESULT, dx_Present, UINT SyncInterval, UINT Flags) {
-  return dx_Present(SyncInterval, Flags);
+def_hk(HRESULT, dx_Present, IDXGISwapChain * self, UINT SyncInterval, UINT Flags) {
+  return dx_Present(self, SyncInterval, Flags);
 }
 
 // ---------------------------------------------------------------------------------------------------- 

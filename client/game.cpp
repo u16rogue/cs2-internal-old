@@ -44,14 +44,20 @@ auto _deduce_T_pattern_scan(T & out, void * start, usize size, const char (&patt
 auto game::init() -> bool {
   cs2log("Initializing game context...");
 
+  // -------------------------------------------------- 
+  // -- Render system
   make_module_info(rendersystem, "rendersystemdx11.dll");
-
   w_pattern_scan(
       game::d3d_instance,
       rendersystem,
       "\x48\x8B\x0D\xCC\xCC\xCC\xCC\x44\x8B\xCB\x45\x8B\xC7",
       mem::rel2abs<3>()
   );
+
+  cs2log("D3D.Device:        {}", (void *)((*game::d3d_instance)->device));
+  cs2log("D3D.DeviceContext: {}", (void *)((*game::d3d_instance)->device_context));
+  cs2log("D3D.SwapChain:     {}", (void *)(*(*game::d3d_instance)->swapchain_info)->swapchain);
+  // -------------------------------------------------- 
 
   return true;
 }
