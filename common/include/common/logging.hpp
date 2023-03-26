@@ -6,7 +6,7 @@
   #include <format>
   #include <string_view>
 
-namespace cs2::common {
+namespace common {
 
 template <typename... vargs_t>
 auto cs2log(const char * loginfo, std::string_view fmt, vargs_t... vargs) -> void {
@@ -19,7 +19,7 @@ auto cs2log(const char * loginfo, std::string_view fmt, vargs_t... vargs) -> voi
   #define cs2stringify(x) _cs2stringify(x)
 
   #define cs2log(...) \
-    cs2::common::cs2log((__FILE__ ":" cs2stringify(__LINE__)) + sizeof(CS2INT_COMMON_SOURCE_DIR), __VA_ARGS__)
+    common::cs2log((__FILE__ ":" cs2stringify(__LINE__)) + sizeof(CS2INT_COMMON_SOURCE_DIR), __VA_ARGS__)
 
 #else // defined(CS2INT_COMMON_LOGGING) && CS2INT_COMMON_LOGGING == 1
 

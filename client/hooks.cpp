@@ -6,6 +6,9 @@
 #include <common/logging.hpp>
 #include <common/types.hpp>
 
+#include <dxgi.h>
+#include <d3d11.h>
+
 #define def_hk(rt, nm, ...)                 \
   static rt(*nm)(__VA_ARGS__) = nullptr;   \
   static auto __hk_##nm(__VA_ARGS__) -> rt
@@ -24,6 +27,10 @@ def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, fl
   *unk6 = 1.f;
   *unk9 = true;
   return true;
+}
+
+def_hk(HRESULT, dx_Present, UINT SyncInterval, UINT Flags) {
+  return dx_Present(SyncInterval, Flags);
 }
 
 // ---------------------------------------------------------------------------------------------------- 

@@ -9,6 +9,11 @@ add_library(
 
   "hooks.hpp"
   "hooks.cpp"
+  
+  "game.hpp"
+  "game.cpp"
+
+  "cs2/structs.hpp"
 )
 
 set_target_properties(

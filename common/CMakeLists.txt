@@ -8,6 +8,9 @@ add_library(
   "include/common/logging.hpp"
   "src/logging.cpp"
 
+  "include/common/pattern_scanner.hpp"
+  "src/pattern_scanner.cpp"
+
   "include/common/types.hpp"
 )
 
@@ -21,6 +24,12 @@ target_include_directories(
   ${PROJECT_NAME}
   PUBLIC
   "include/"
+)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+  PRIVATE
+  metapp
 )
 
 if (CS2INT_LOGGING)

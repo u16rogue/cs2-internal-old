@@ -2,9 +2,11 @@
 #include <common/logging.hpp>
 #include <common/types.hpp>
 #include <cstdio>
+
 #include <metapp/metapp.hpp>
 // #include <kahel-winpe/kahel-winpe.hpp>
 
+#include "game.hpp"
 #include "hooks.hpp"
 
 #if defined(CS2INT_COMMON_LOGGING) && CS2INT_COMMON_LOGGING == 1
@@ -63,6 +65,7 @@ static auto WINAPI init_thread(LPVOID arg) -> DWORD {
     dump_interface();
   };
 
+  game::init();
   hooks::install();
 
   return 0;
@@ -75,6 +78,7 @@ auto WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved) -> BOOL {
     mpp_defer { CloseHandle(h); };
   } else if (reason == DLL_PROCESS_DETACH) {
     hooks::uninstall();
+    game::uninit();
     IS_LOGGING() { FreeConsole(); };
   }
   return TRUE;

@@ -8,3 +8,5 @@ CMakeSettings.json
 deps/kahel-s2kit
 deps/metapp
 deps/kahel-winpe
+
+notes.txt
