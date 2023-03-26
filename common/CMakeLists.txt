@@ -11,6 +11,9 @@ add_library(
   "include/common/pattern_scanner.hpp"
   "src/pattern_scanner.cpp"
 
+  "include/common/utils.hpp"
+  "src/utils.cpp"
+
   "include/common/types.hpp"
 )
 

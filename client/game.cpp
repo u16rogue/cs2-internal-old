@@ -3,20 +3,13 @@
 #include <common/logging.hpp>
 #include <common/types.hpp>
 #include <common/pattern_scanner.hpp>
+#include <common/utils.hpp>
 
 #include <tuple>
 
-#include <Windows.h>
-#include <Psapi.h>
+
 
 namespace mem = common::mem;
-
-static auto module_info(const char * nm) -> std::pair<u8 *, usize> {
-  HMODULE rendersystem = GetModuleHandleA(nm);
-  MODULEINFO mi = {};
-  GetModuleInformation(GetCurrentProcess(), rendersystem, &mi, sizeof(mi));
-  return std::make_pair(reinterpret_cast<u8 *>(mi.lpBaseOfDll), mi.SizeOfImage);
-}
 
 template <typename T, int sz, typename... vargs_t>
 auto _deduce_T_pattern_scan(T & out, void * start, usize size, const char (&pattern)[sz], vargs_t... walkers) -> T {
@@ -25,19 +18,19 @@ auto _deduce_T_pattern_scan(T & out, void * start, usize size, const char (&patt
 }
 
 #define make_module_info(id, nm)                                      \
-  auto [id, id_sz] = module_info(nm);                                 \
-  if (!id || !id_sz) {                                                \
+  auto [id, id##_sz] = common::utils::module_info(nm);                \
+  if (!id || !id##_sz) {                                              \
     cs2log(nm " not found.");                                         \
     return false;                                                     \
   }                                                                   \
-  cs2log(nm " @ {} ({} bytes)", reinterpret_cast<void *>(id), id_sz)
+  cs2log(nm " @ {} ({} bytes)", reinterpret_cast<void *>(id), id##_sz)
 
 
-#define w_pattern_scan(out, id, pattern, ...)                                       \
-  if (!_deduce_T_pattern_scan(out, id, id_sz, pattern __VA_OPT__(,) __VA_ARGS__)) { \
-    cs2log(#out "not found.");                                                      \
-    return false;                                                                   \
-  }                                                                                 \
+#define w_pattern_scan(out, id, pattern, ...)                                         \
+  if (!_deduce_T_pattern_scan(out, id, id##_sz, pattern __VA_OPT__(,) __VA_ARGS__)) { \
+    cs2log(#out "not found.");                                                        \
+    return false;                                                                     \
+  }                                                                                   \
   cs2log(#out " found @ {}", reinterpret_cast<void *>(out))
 
 
@@ -55,8 +48,9 @@ auto game::init() -> bool {
   );
 
   cs2log("D3D.Device:        {}", (void *)((*game::d3d_instance)->device));
-  cs2log("D3D.DeviceContext: {}", (void *)((*game::d3d_instance)->device_context));
-  cs2log("D3D.SwapChain:     {}", (void *)(*(*game::d3d_instance)->swapchain_info)->swapchain);
+  cs2log("D3D.DeviceContext: {}", (void *)((*game::d3d_instance)->device_context)); 
+  cs2log("D3D.SwapChain:     {}", (void *)(*(*game::d3d_instance)->info)->swapchain);
+  cs2log("HWindow:           {}", (void *)(*(*game::d3d_instance)->info)->window);
   // -------------------------------------------------- 
 
   return true;
