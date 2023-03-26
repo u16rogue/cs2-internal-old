@@ -41,16 +41,16 @@ auto game::init() -> bool {
   // -- Render system
   make_module_info(rendersystem, "rendersystemdx11.dll");
   w_pattern_scan(
-      game::d3d_instance,
+      game::d3d_instance.ptr,
       rendersystem,
       "\x48\x8B\x0D\xCC\xCC\xCC\xCC\x44\x8B\xCB\x45\x8B\xC7",
       mem::rel2abs<3>()
   );
 
-  cs2log("D3D.Device:        {}", (void *)((*game::d3d_instance)->device));
-  cs2log("D3D.DeviceContext: {}", (void *)((*game::d3d_instance)->device_context)); 
-  cs2log("D3D.SwapChain:     {}", (void *)(*(*game::d3d_instance)->info)->swapchain);
-  cs2log("HWindow:           {}", (void *)(*(*game::d3d_instance)->info)->window);
+  cs2log("D3D.Device:        {}", (void *)game::d3d_instance->device);
+  cs2log("D3D.DeviceContext: {}", (void *)game::d3d_instance->device_context); 
+  cs2log("D3D.SwapChain:     {}", (void *)game::d3d_instance->info->swapchain);
+  cs2log("HWindow:           {}", (void *)game::d3d_instance->info->window);
   // -------------------------------------------------- 
 
   return true;

@@ -64,7 +64,7 @@ auto hooks::install() -> bool {
   }
 
   cs2log("Hooking dxgi.Present...");
-  if (u8 * dxgi_Present_target = reinterpret_cast<u8 ***>((*((*game::d3d_instance)->info))->swapchain)[0][8]; dxgi_Present_target) {
+  if (u8 * dxgi_Present_target = reinterpret_cast<u8 ***>(game::d3d_instance->info->swapchain)[0][8]; dxgi_Present_target) {
     cs2log("dxgi.Present @ {}", reinterpret_cast<void *>(dxgi_Present_target));
     if (!create_hk(dxgi_Present, dxgi_Present_target)) {
       cs2log("Failed to hook dxgi.Present + 0xA");
