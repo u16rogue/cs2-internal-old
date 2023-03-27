@@ -10,6 +10,11 @@
 
 #include <dxgi.h>
 #include <d3d11.h>
+#include <winuser.h>
+
+#include <imgui.h>
+#include <imgui_impl_win32.h>
+#include <imgui_impl_dx11.h>
 
 #include "game.hpp"
 
@@ -45,6 +50,14 @@ def_hk(HRESULT, dxgi_Present, IDXGISwapChain * self, UINT SyncInterval, UINT Fla
   return dxgi_Present(self, SyncInterval, Flags);
 }
 
+def_hk(HRESULT, dxgi_ResizeBuffers, IDXGISwapChain * self, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+  return dxgi_ResizeBuffers(self, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+}
+
+def_hk(LRESULT, wndproc, HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+  return wndproc(hwnd, msg, wparam, lparam);
+}
+
 // ---------------------------------------------------------------------------------------------------- 
 
 auto hooks::install() -> bool {
@@ -56,21 +69,40 @@ auto hooks::install() -> bool {
   }
 
   make_module_info(client, "client.dll");
-  make_module_info(dxgi,   "dxgi.dll");
 
   cs2log("Hooking cs2_spec_glow...");
   if (!create_hk(cs2_spec_glow, client + 0x77A470)) {
     cs2log("Failed to hook cs2_spec_glow");
   }
 
+  cs2log("Hooking WndProc...");
+  if (void * wndproc_target = reinterpret_cast<void *>(GetWindowLongPtrW(game::d3d_instance->info->window, GWLP_WNDPROC)); wndproc_target) {
+    cs2log("WndProc @ {}", wndproc_target);
+    if (!create_hk(wndproc, wndproc_target)) {
+      cs2log("Failed to hook WndProc");
+    }
+  } else {
+    cs2log("WndProc not found.");
+  }
+
   cs2log("Hooking dxgi.Present...");
-  if (u8 * dxgi_Present_target = reinterpret_cast<u8 ***>(game::d3d_instance->info->swapchain)[0][8]; dxgi_Present_target) {
-    cs2log("dxgi.Present @ {}", reinterpret_cast<void *>(dxgi_Present_target));
+  if (void * dxgi_Present_target = reinterpret_cast<void ***>(game::d3d_instance->info->swapchain)[0][8]; dxgi_Present_target) {
+    cs2log("dxgi.Present @ {}", dxgi_Present_target);
     if (!create_hk(dxgi_Present, dxgi_Present_target)) {
-      cs2log("Failed to hook dxgi.Present + 0xA");
+      cs2log("Failed to hook dxgi.Present");
     }
   } else {
     cs2log("dxgi.Present not found.");
+  }
+
+  cs2log("Hooking dxgi.ResizeBuffers...");
+  if (void * dxgi_ResizeBuffers_target = reinterpret_cast<void ***>(game::d3d_instance->info->swapchain)[0][13]; dxgi_ResizeBuffers_target) {
+    cs2log("dxgi.ResizeBuffers @ {}", dxgi_ResizeBuffers_target);
+    if (!create_hk(dxgi_ResizeBuffers, dxgi_ResizeBuffers_target)) {
+      cs2log("Failed to hook dxgi.ResizeBuffers");
+    }
+  } else {
+    cs2log("dxgi.ResizeBuffers not found.");
   }
   
   cs2log("Enabling all hooks...");

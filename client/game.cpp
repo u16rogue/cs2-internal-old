@@ -47,10 +47,11 @@ auto game::init() -> bool {
       mem::rel2abs<3>()
   );
 
-  cs2log("D3D.Device:        {}", (void *)game::d3d_instance->device);
-  cs2log("D3D.DeviceContext: {}", (void *)game::d3d_instance->device_context); 
-  cs2log("D3D.SwapChain:     {}", (void *)game::d3d_instance->info->swapchain);
-  cs2log("HWindow:           {}", (void *)game::d3d_instance->info->window);
+  cs2log("D3D.Device:                            {}", (void *)game::d3d_instance->device);
+  cs2log("D3D.DeviceContext:                     {}", (void *)game::d3d_instance->device_context); 
+  cs2log("D3D.SwapChain:                         {}", (void *)game::d3d_instance->info->swapchain);
+  cs2log("HWindow:                               {}", (void *)game::d3d_instance->info->window);
+  cs2log("D3D.DeviceContext->OMSetRenderTargets: {}", reinterpret_cast<void ***>(game::d3d_instance->device_context)[0][33]);
   // -------------------------------------------------- 
 
   return true;

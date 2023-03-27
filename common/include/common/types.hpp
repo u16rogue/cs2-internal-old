@@ -19,3 +19,4 @@ using idiff = i32;
 using udiff = u32;
 
 using uiptr = u64;
+using vptr  = void *;
