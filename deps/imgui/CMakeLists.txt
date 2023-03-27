@@ -11,8 +11,13 @@ project(imgui)
 add_library(
   ${PROJECT_NAME}
   STATIC
-  "${IMGUI_PATH}/imgui.h"
+  "${IMGUI_PATH}/imconfig.h"
   "${IMGUI_PATH}/imgui.cpp"
+  "${IMGUI_PATH}/imgui.h"
+  "${IMGUI_PATH}/imgui_draw.cpp"
+  "${IMGUI_PATH}/imgui_internal.h"
+  "${IMGUI_PATH}/imgui_tables.cpp"
+  "${IMGUI_PATH}/imgui_widgets.cpp"
   "${IMGUI_PATH}/backends/imgui_impl_win32.h"
   "${IMGUI_PATH}/backends/imgui_impl_win32.cpp"
   "${IMGUI_PATH}/backends/imgui_impl_dx11.h"
@@ -25,3 +30,9 @@ target_include_directories(
   "${IMGUI_PATH}"
   "${IMGUI_PATH}/backends"
 )
+
+# target_link_libraries(
+#   ${PROJECT_NAME}
+#   PRIVATE
+#   dxsdk
+# )

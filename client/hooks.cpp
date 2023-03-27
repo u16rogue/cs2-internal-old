@@ -10,6 +10,7 @@
 
 #include <dxgi.h>
 #include <d3d11.h>
+#include <winerror.h>
 #include <winuser.h>
 
 #include <imgui.h>
@@ -34,6 +35,8 @@
   (MH_CreateHook(target, reinterpret_cast<void *>(&__hk_##nm), reinterpret_cast<void **>(&nm)) == MH_OK)
 
 // ---------------------------------------------------------------------------------------------------- 
+static ID3D11RenderTargetView * dx_render_target_view = nullptr;
+// ---------------------------------------------------------------------------------------------------- 
 
 def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, float * unk5, float * unk6, float * unk7, float * unk8, bool * unk9) {
   bool r = cs2_spec_glow(unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8, unk9);
@@ -47,18 +50,84 @@ def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, fl
 }
 
 def_hk(HRESULT, dxgi_Present, IDXGISwapChain * self, UINT SyncInterval, UINT Flags) {
+  ImGui_ImplDX11_NewFrame();
+  ImGui_ImplWin32_NewFrame();
+  ImGui::NewFrame();
+
+  ImGui::Begin("cunnyware // keso.moe");
+  ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
+  ImGui::End();
+
+  ImGui::Render();
+  game::d3d_instance->device_context->OMSetRenderTargets(1, &dx_render_target_view, nullptr);
+  ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
   return dxgi_Present(self, SyncInterval, Flags);
 }
 
 def_hk(HRESULT, dxgi_ResizeBuffers, IDXGISwapChain * self, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
-  return dxgi_ResizeBuffers(self, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+  if (dx_render_target_view) {
+    dx_render_target_view->Release();
+    dx_render_target_view = nullptr;
+  }
+
+  auto result = dxgi_ResizeBuffers(self, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+
+  if (ID3D11Texture2D * dxbb = nullptr; SUCCEEDED(game::d3d_instance->info->swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&dxbb)))) {
+    if (FAILED(game::d3d_instance->device->CreateRenderTargetView(dxbb, nullptr, &dx_render_target_view))) {
+      cs2log("Failed to recreate RenderTarget");
+    }
+    dxbb->Release();
+  } else {
+    cs2log("Failed to recreate BackBuffer");
+  }
+
+  return result;
 }
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 def_hk(LRESULT, wndproc, HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+    return TRUE;
+  }
   return wndproc(hwnd, msg, wparam, lparam);
 }
 
 // ---------------------------------------------------------------------------------------------------- 
+
+static auto prep_render() -> bool {
+  cs2log("Preparing renderer...");
+
+  ImGui::CreateContext();
+  ImGui::GetIO().IniFilename = nullptr;
+
+  cs2log("Acquiring BackBuffer...");
+  ID3D11Texture2D * dx_backbuffer = nullptr;
+  if (FAILED(game::d3d_instance->info->swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&dx_backbuffer)))) {
+    cs2log("Failed to create BackBuffer");
+    return false;
+  }
+
+  mpp_defer {
+    if (dx_backbuffer) {
+      dx_backbuffer->Release();
+      dx_backbuffer = nullptr;
+    }
+  };
+
+  cs2log("Acquiring RenderTarget");
+  if (FAILED(game::d3d_instance->device->CreateRenderTargetView(dx_backbuffer, nullptr, &dx_render_target_view))) {
+    cs2log("Failed to create RenderTarget");
+    return false;
+  }
+
+  cs2log("Initializing ImGui...");
+  if (!ImGui_ImplWin32_Init(game::d3d_instance->info->window) || !ImGui_ImplDX11_Init(game::d3d_instance->device, game::d3d_instance->device_context)) {
+    cs2log("Failed to initialize ImGui.");
+  }
+
+  cs2log("Renderer ready!1!! :3");
+  return true;
+}
 
 auto hooks::install() -> bool {
   cs2log("Installing hooks...");
@@ -74,6 +143,10 @@ auto hooks::install() -> bool {
   if (!create_hk(cs2_spec_glow, client + 0x77A470)) {
     cs2log("Failed to hook cs2_spec_glow");
   }
+ 
+  if (!prep_render()) {
+    return false;
+  }
 
   cs2log("Hooking WndProc...");
   if (void * wndproc_target = reinterpret_cast<void *>(GetWindowLongPtrW(game::d3d_instance->info->window, GWLP_WNDPROC)); wndproc_target) {
@@ -84,6 +157,7 @@ auto hooks::install() -> bool {
   } else {
     cs2log("WndProc not found.");
   }
+
 
   cs2log("Hooking dxgi.Present...");
   if (void * dxgi_Present_target = reinterpret_cast<void ***>(game::d3d_instance->info->swapchain)[0][8]; dxgi_Present_target) {
@@ -115,11 +189,18 @@ auto hooks::install() -> bool {
   return true;
 }
 
-auto hooks::uninstall() -> bool {
+auto hooks::uninstall() -> bool { 
   cs2log("Uninstalling hooks...");
   MH_DisableHook(MH_ALL_HOOKS);
   MH_Uninitialize();
   cs2log("Hooks uninstalled!");
+
+  // [27-03-2023] We intentionally unhook first before uninit so we dont have hooks trying to use imgui
+  cs2log("Shutting down ImGui...");
+  ImGui_ImplDX11_Shutdown();
+  ImGui_ImplWin32_Shutdown();
+  ImGui::DestroyContext();
+  cs2log("ImGui shutted down.");
   return true;
 }
 

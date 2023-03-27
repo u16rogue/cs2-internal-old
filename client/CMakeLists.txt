@@ -31,6 +31,7 @@ target_link_libraries(
   metapp
   common
   minhook
+  #dxsdk
   imgui
   # kahel_winpe
 )

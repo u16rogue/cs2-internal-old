@@ -18,6 +18,7 @@ add_subdirectory("deps/kahel-s2kit")
 add_subdirectory("deps/kahel-winpe")
 add_subdirectory("deps/metapp")
 add_subdirectory("deps/minhook")
+# add_subdirectory("deps/dxsdk")
 add_subdirectory("deps/imgui")
 
 add_subdirectory("common")
