@@ -17,7 +17,9 @@
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
 
+#include "global.hpp"
 #include "game.hpp"
+#include "menu.hpp"
 
 #define make_module_info(id, nm)                                      \
   auto [id, id##_sz] = common::utils::module_info(nm);                \
@@ -35,28 +37,28 @@
   (MH_CreateHook(target, reinterpret_cast<void *>(&__hk_##nm), reinterpret_cast<void **>(&nm)) == MH_OK)
 
 // ---------------------------------------------------------------------------------------------------- 
-static ID3D11RenderTargetView * dx_render_target_view = nullptr;
-// ---------------------------------------------------------------------------------------------------- 
 
 def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, float * unk5, float * unk6, float * unk7, float * unk8, bool * unk9) {
   bool r = cs2_spec_glow(unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8, unk9);
-  unk4[0] = 1.f;
-  unk4[1] = 1.f;
-  unk4[2] = 1.f;
-  *unk5 = 1.f;
-  *unk6 = 1.f;
+  for (int i = 0; i < 3; ++i) {
+    unk4[i] = global::test::rgb[i];
+  }
+  *unk5 = global::test::unk0;
+  *unk6 = global::test::unk1;
   *unk9 = true;
   return true;
 }
+
+// ---------------------------------------------------------------------------------------------------- 
+
+static ID3D11RenderTargetView * dx_render_target_view = nullptr;
 
 def_hk(HRESULT, dxgi_Present, IDXGISwapChain * self, UINT SyncInterval, UINT Flags) {
   ImGui_ImplDX11_NewFrame();
   ImGui_ImplWin32_NewFrame();
   ImGui::NewFrame();
 
-  ImGui::Begin("cunnyware // keso.moe");
-  ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
-  ImGui::End();
+  menu::imgui_render(); 
 
   ImGui::Render();
   game::d3d_instance->device_context->OMSetRenderTargets(1, &dx_render_target_view, nullptr);
@@ -86,10 +88,26 @@ def_hk(HRESULT, dxgi_ResizeBuffers, IDXGISwapChain * self, UINT BufferCount, UIN
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 def_hk(LRESULT, wndproc, HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+
+  if (msg == WM_KEYDOWN && wparam == VK_INSERT) {
+    menu::toggle();
+  }
+
+  if (menu::is_open() && (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam) || menu::wndproc(hwnd, msg, wparam, lparam))) {
     return TRUE;
   }
+
   return wndproc(hwnd, msg, wparam, lparam);
+}
+
+def_hk(BOOL, _ClipCursor, const RECT *lpRect) {
+  if (menu::is_open()) {
+    if (!lpRect)
+      return _ClipCursor(NULL); 
+    return TRUE;
+  }
+
+  return _ClipCursor(lpRect);
 }
 
 // ---------------------------------------------------------------------------------------------------- 
@@ -142,6 +160,7 @@ auto hooks::install() -> bool {
   cs2log("Hooking cs2_spec_glow...");
   if (!create_hk(cs2_spec_glow, client + 0x77A470)) {
     cs2log("Failed to hook cs2_spec_glow");
+    return false;
   }
  
   if (!prep_render()) {
@@ -153,9 +172,17 @@ auto hooks::install() -> bool {
     cs2log("WndProc @ {}", wndproc_target);
     if (!create_hk(wndproc, wndproc_target)) {
       cs2log("Failed to hook WndProc");
+      return false;
     }
   } else {
     cs2log("WndProc not found.");
+    return false;
+  }
+
+  cs2log("Hooking ClipCursor...");
+  if (!create_hk(_ClipCursor, reinterpret_cast<void **>(&ClipCursor))) {
+    cs2log("Failed to hook ClipCursor");
+    return false;
   }
 
 
@@ -164,9 +191,11 @@ auto hooks::install() -> bool {
     cs2log("dxgi.Present @ {}", dxgi_Present_target);
     if (!create_hk(dxgi_Present, dxgi_Present_target)) {
       cs2log("Failed to hook dxgi.Present");
+      return false;
     }
   } else {
     cs2log("dxgi.Present not found.");
+    return false;
   }
 
   cs2log("Hooking dxgi.ResizeBuffers...");
@@ -174,9 +203,11 @@ auto hooks::install() -> bool {
     cs2log("dxgi.ResizeBuffers @ {}", dxgi_ResizeBuffers_target);
     if (!create_hk(dxgi_ResizeBuffers, dxgi_ResizeBuffers_target)) {
       cs2log("Failed to hook dxgi.ResizeBuffers");
+      return false;
     }
   } else {
     cs2log("dxgi.ResizeBuffers not found.");
+    return false;
   }
   
   cs2log("Enabling all hooks...");
@@ -201,6 +232,10 @@ auto hooks::uninstall() -> bool {
   ImGui_ImplWin32_Shutdown();
   ImGui::DestroyContext();
   cs2log("ImGui shutted down.");
+
+  if (dx_render_target_view)
+    dx_render_target_view->Release();
+
   return true;
 }
 

@@ -5,15 +5,18 @@ project(client)
 add_library(
   ${PROJECT_NAME}
   SHARED
+  "global.hpp"
   "main.cpp"
-
   "hooks.hpp"
   "hooks.cpp"
-  
   "game.hpp"
   "game.cpp"
+  "menu.hpp"
+  "menu.cpp"
 
   "cs2/structs.hpp"
+  "cs2/convar.hpp"
+  "cs2/convar.cpp"
 )
 
 set_target_properties(
