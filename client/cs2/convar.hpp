@@ -9,7 +9,7 @@ struct FCVAR {
   using type = u32;
 
   #define _CS2_FCVAR_ENTRY(x, y) static constexpr type x = y;
-  #include "convar.lst"
+  #include "fcvar_defs.lst"
   #undef _CS2_FCVAR_ENTRY
 
   auto tocstr(type id) -> const char *;
@@ -26,5 +26,8 @@ struct convar {
    convar_data * data;
 };
 static_assert(sizeof(convar) == 0x10, "Invalid cs2::convar");
+
+class iconvar {
+};
 
 } // cs2

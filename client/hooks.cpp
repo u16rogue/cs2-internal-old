@@ -1,5 +1,5 @@
 #include "hooks.hpp"
-#include "common/pattern_scanner.hpp"
+#include <common/mem.hpp>
 
 #include <Windows.h>
 #include <MinHook.h>

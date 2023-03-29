@@ -2,7 +2,7 @@
 
 #include <common/logging.hpp>
 #include <common/types.hpp>
-#include <common/pattern_scanner.hpp>
+#include <common/mem.hpp>
 #include <common/utils.hpp>
 
 #include <tuple>

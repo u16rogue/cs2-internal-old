@@ -1,4 +1,4 @@
-#include <common/pattern_scanner.hpp>
+#include <common/mem.hpp>
 
 auto common::mem::details::pattern_scan(void * start, const usize size, const char * pattern, const usize pattern_length, const u8 mask) -> void * {
   u8 *       base = reinterpret_cast<u8 *>(start);

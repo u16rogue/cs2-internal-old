@@ -2,6 +2,41 @@
 #include <Windows.h>
 #include <common/types.hpp>
 
+utils::solib::solib(void * base)
+  : base(base) {}
+
+auto utils::solib::acquire_intf_root() -> bool {
+  if (intf_root)
+    return true;
+
+  intf_root = get_module_interface_linkedlist(base);
+  return intf_root;
+}
+
+auto utils::solib::create_interface(std::string_view name) -> void * {
+  if (!acquire_intf_root())
+    return nullptr;
+
+  for (auto intf : interface_iterator(intf_root)) {
+    if (intf->name == name)
+      return intf->create();
+  }
+
+  return nullptr;
+}
+
+utils::solib::operator bool() const {
+  return base;
+}
+
+auto utils::solib::create_interface_partial(std::string_view name) -> void * {
+  // TODO: implement
+  if (!acquire_intf_root())
+    return nullptr;
+
+  return nullptr;
+}
+
 auto utils::get_module_interface_linkedlist(void * hmodule) -> cs2::intfreg * {
   // TODO: replace getprocaddress with something
   u8 * createintf_export = reinterpret_cast<decltype(createintf_export)>(GetProcAddress(HMODULE(hmodule), "CreateInterface"));
@@ -16,8 +51,8 @@ auto utils::get_module_interfaces(void * hmodule) -> interface_iterator {
   return interface_iterator(get_module_interface_linkedlist(hmodule));
 }
 
-utils::interface_iterator::interface_iterator(cs2::intfreg * first)
-  : current(first)
+utils::interface_iterator::interface_iterator(cs2::intfreg * root)
+  : current(root)
 {}
 
 auto utils::interface_iterator::begin() -> interface_iterator {

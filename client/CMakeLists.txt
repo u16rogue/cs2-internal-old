@@ -25,6 +25,8 @@ add_library(
   "cs2/convar.cpp"
   "cs2/interface.hpp"
   "cs2/interface.cpp"
+  "cs2/cutl.hpp"
+  "cs2/cutl.cpp"
 )
 
 set_target_properties(

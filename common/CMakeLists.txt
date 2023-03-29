@@ -8,8 +8,8 @@ add_library(
   "include/common/logging.hpp"
   "src/logging.cpp"
 
-  "include/common/pattern_scanner.hpp"
-  "src/pattern_scanner.cpp"
+  "include/common/mem.hpp"
+  "src/mem.cpp"
 
   "include/common/utils.hpp"
   "src/utils.cpp"
