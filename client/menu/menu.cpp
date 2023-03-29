@@ -3,8 +3,10 @@
 #include <winuser.h>
 #include <Windows.h>
 
-#include "global.hpp"
-#include "game.hpp"
+#include "../global.hpp"
+#include "../game.hpp"
+
+#include "tabs.hpp"
 
 static bool menu_open = false;
 static bool last_cflag = false;
@@ -60,9 +62,10 @@ auto menu::imgui_render() -> void {
   ImGui::Begin("cunnyware // keso.moe");
   ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
 
-  ImGui::ColorEdit3("RGB", global::test::rgb);
-  ImGui::SliderFloat("idk 0", &global::test::unk0, 0.f, 1.f);
-  ImGui::SliderFloat("idk 1", &global::test::unk1, 0.f, 1.f);
+  if (ImGui::BeginTabBar("##cs2tabs")) {
+    tabs::on_menu_tab();
+    ImGui::EndTabBar();
+  }
 
   ImGui::End();
 }

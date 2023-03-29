@@ -11,12 +11,20 @@ add_library(
   "hooks.cpp"
   "game.hpp"
   "game.cpp"
-  "menu.hpp"
-  "menu.cpp"
+  "utils.hpp"
+  "utils.cpp"
+
+  "menu/menu.hpp"
+  "menu/menu.cpp"
+  "menu/tabs.hpp"
+  "menu/tabs/debug.hpp"
+  "menu/tabs/debug.cpp"
 
   "cs2/structs.hpp"
   "cs2/convar.hpp"
   "cs2/convar.cpp"
+  "cs2/interface.hpp"
+  "cs2/interface.cpp"
 )
 
 set_target_properties(

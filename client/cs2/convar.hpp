@@ -15,4 +15,16 @@ struct FCVAR {
   auto tocstr(type id) -> const char *;
 }; // FCVAR
 
+struct convar_data {
+   const char * name;
+   void * unk[8];
+};
+static_assert(sizeof(convar_data) == 0x48, "Invalid cs2::convar_data");
+
+struct convar {
+   void * maybevtable;
+   convar_data * data;
+};
+static_assert(sizeof(convar) == 0x10, "Invalid cs2::convar");
+
 } // cs2

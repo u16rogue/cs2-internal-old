@@ -19,7 +19,7 @@
 
 #include "global.hpp"
 #include "game.hpp"
-#include "menu.hpp"
+#include "menu/menu.hpp"
 
 #define make_module_info(id, nm)                                      \
   auto [id, id##_sz] = common::utils::module_info(nm);                \
@@ -39,6 +39,7 @@
 // ---------------------------------------------------------------------------------------------------- 
 
 def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, float * unk5, float * unk6, float * unk7, float * unk8, bool * unk9) {
+#if 0
   bool r = cs2_spec_glow(unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8, unk9);
   for (int i = 0; i < 3; ++i) {
     unk4[i] = global::test::rgb[i];
@@ -47,6 +48,9 @@ def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, fl
   *unk6 = global::test::unk1;
   *unk9 = true;
   return true;
+#endif
+
+  return cs2_spec_glow(unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8, unk9);
 }
 
 // ---------------------------------------------------------------------------------------------------- 

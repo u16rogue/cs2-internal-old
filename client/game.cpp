@@ -37,8 +37,7 @@ auto _deduce_T_pattern_scan(T & out, void * start, usize size, const char (&patt
 auto game::init() -> bool {
   cs2log("Initializing game context...");
 
-  // -------------------------------------------------- 
-  // -- Render system
+  // Render system
   make_module_info(rendersystem, "rendersystemdx11.dll");
   w_pattern_scan(
       game::d3d_instance.ptr,
@@ -52,7 +51,6 @@ auto game::init() -> bool {
   cs2log("D3D.SwapChain:                         {}", (void *)game::d3d_instance->info->swapchain);
   cs2log("HWindow:                               {}", (void *)game::d3d_instance->info->window);
   cs2log("D3D.DeviceContext->OMSetRenderTargets: {}", reinterpret_cast<void ***>(game::d3d_instance->device_context)[0][33]);
-  // -------------------------------------------------- 
 
   return true;
 }
