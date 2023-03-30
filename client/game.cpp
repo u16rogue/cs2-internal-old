@@ -1,4 +1,5 @@
 #include "game.hpp"
+#include "client/game.hpp"
 
 #include <common/logging.hpp>
 #include <common/types.hpp>
@@ -33,11 +34,25 @@ auto _deduce_T_pattern_scan(T & out, void * start, usize size, const char (&patt
   }                                                                                   \
   cs2log(#out " found @ {}", reinterpret_cast<void *>(out))
 
+#define w_load_interface(iface, son, nm) \
+  if (game::intf::iface = reinterpret_cast<decltype(game::intf::iface)>(game::so::son.create_interface(nm)); !game::intf::iface) { \
+    cs2log("Failed to create interface for " nm);                                                                                  \
+    return false;                                                                                                                  \
+  }                                                                                                                                \
+  cs2log(nm " @ {}", (void *)game::intf::iface);
 
-auto game::init() -> bool {
-  cs2log("Initializing game context...");
 
-  // Render system
+static auto init_shared_objects() -> bool {
+  game::so::tier0 = GetModuleHandleA("tier0.dll");
+  if (!game::so::tier0) {
+    cs2log("tier0.dll not found.");
+    return false;
+  }
+
+  return true;
+}
+
+static auto init_patterns() -> bool {
   make_module_info(rendersystem, "rendersystemdx11.dll");
   w_pattern_scan(
       game::d3d_instance.ptr,
@@ -55,9 +70,21 @@ auto game::init() -> bool {
   return true;
 }
 
+static auto init_interface() -> bool {
+  w_load_interface(convar, tier0, "VEngineCvar007");
+  return true;
+}
+
+auto game::init() -> bool {
+  cs2log("Initializing game context...");
+
+  return init_shared_objects() && init_patterns() && init_interface();
+}
+
 auto game::uninit() -> bool {
   return true;
 }
 
+#undef w_load_interface
 #undef w_pattern_scan
 #undef make_module_info

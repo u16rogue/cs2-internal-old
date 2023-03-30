@@ -17,9 +17,11 @@
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
 
-#include "global.hpp"
-#include "game.hpp"
-#include "menu/menu.hpp"
+#include <client/cs2/convar.hpp>
+
+#include <client/global.hpp>
+#include <client/game.hpp>
+#include <client/menu/menu.hpp>
 
 #define make_module_info(id, nm)                                      \
   auto [id, id##_sz] = common::utils::module_info(nm);                \
@@ -39,18 +41,43 @@
 // ---------------------------------------------------------------------------------------------------- 
 
 def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, float * unk5, float * unk6, float * unk7, float * unk8, bool * unk9) {
-#if 0
   bool r = cs2_spec_glow(unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8, unk9);
-  for (int i = 0; i < 3; ++i) {
-    unk4[i] = global::test::rgb[i];
+  if (global::test::glow) {
+    for (int i = 0; i < 3; ++i) {
+      unk4[i] = global::test::rgb[i];
+    }
+    *unk6 = global::test::rgb[3];
+    *unk9 = true;
+    return true;
   }
-  *unk5 = global::test::unk0;
-  *unk6 = global::test::unk1;
-  *unk9 = true;
-  return true;
-#endif
 
-  return cs2_spec_glow(unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8, unk9);
+  return r;
+}
+
+def_hk(float, cs2_get_player_fov, void * unk1) {
+  if (global::test::force_fov != -1.f)
+    return global::test::force_fov;
+  return cs2_get_player_fov(unk1);
+}
+
+def_hk(bool, cs2_engine_get_sv_cheats_flag) {
+  if (global::test::force_sv_cheats)
+    return global::test::force_sv_cheats_state;
+  return cs2_engine_get_sv_cheats_flag();
+}
+
+def_hk(void *, cs2_client_get_cvar_value, cs2::convar_proxy * cvar, int flag) {
+  static void * sv_cheats = nullptr;
+  if (!sv_cheats && std::string_view(cvar->data->name) == "sv_cheats") {
+    sv_cheats = cvar;
+    cs2log("Found sv_cheats!! @ {}", (void *)cvar->data);
+  }
+
+  if (sv_cheats && global::test::force_sv_cheats && cvar == sv_cheats) {
+    return &global::test::force_sv_cheats_state;
+  }
+
+  return cs2_client_get_cvar_value(cvar, flag);
 }
 
 // ---------------------------------------------------------------------------------------------------- 
@@ -160,12 +187,31 @@ auto hooks::install() -> bool {
   }
 
   make_module_info(client, "client.dll");
+  make_module_info(engine, "engine2.dll");
 
   cs2log("Hooking cs2_spec_glow...");
   if (!create_hk(cs2_spec_glow, client + 0x77A470)) {
     cs2log("Failed to hook cs2_spec_glow");
     return false;
   }
+
+  cs2log("Hooking cs2_get_player_fov...");
+  if (!create_hk(cs2_get_player_fov, client + 0x4A7430)) {
+    cs2log("Failed to hook cs2_get_player_fov");
+    return false;
+  }
+
+  cs2log("Hooking cs2_client_get_cvar_value...");
+  if (!create_hk(cs2_client_get_cvar_value, client + 0xED3B70)) {
+    cs2log("Failed to hook cs2_client_get_cvar_value");
+    return false;
+  }
+
+  cs2log("Hooking cs2_engine_get_sv_cheats_flag...");
+  if (!create_hk(cs2_engine_get_sv_cheats_flag, engine + 0xD8EC0)) {
+    cs2log("Failed to hook cs2_engine_get_sv_cheats_flag");
+    return false;
+  } 
  
   if (!prep_render()) {
     return false;

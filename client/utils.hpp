@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cs2/interface.hpp"
+#include <client/cs2/interface.hpp>
 #include <string_view>
 
 namespace utils {

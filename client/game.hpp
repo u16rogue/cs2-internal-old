@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cs2/structs.hpp"
-#include "cs2/convar.hpp"
-#include "utils.hpp"
+#include <client/cs2/structs.hpp>
+#include <client/cs2/convar.hpp>
+#include <client/utils.hpp>
 #include <common/utils.hpp>
 
 namespace game {
@@ -20,6 +20,7 @@ namespace game::so /* shared object aka dll aka modules */ {
 inline utils::solib client;
 inline utils::solib engine;
 inline utils::solib tier0;
+inline utils::solib rendersystem;
 
 } // game::so
 

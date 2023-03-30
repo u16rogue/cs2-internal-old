@@ -24,4 +24,9 @@ struct lazy_arrow {
 };
 static_assert(sizeof(lazy_arrow<void, 2>) == sizeof(void *), "Invalid size of lazy_arrow instance expecting it to be the same as SIZE OF P");
 
+template <int vtidx, int vfidx, typename R, typename... vargs_t>
+auto callvfunc(auto * self, vargs_t... vargs) -> R {
+  return reinterpret_cast<R(***)(void *, vargs_t...)>(self)[vtidx][vfidx](vargs...);
+}
+
 } // common::utils

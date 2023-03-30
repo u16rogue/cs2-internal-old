@@ -4,9 +4,13 @@ namespace global {
 
 namespace test {
 
-inline float rgb[3] = { 1.f, 1.f, 1.f };
-inline float unk0 = 1.f;
-inline float unk1 = 1.f;
+inline bool  glow = false;
+inline float rgb[4] = { 1.f, 1.f, 1.f };
+
+inline float force_fov = -1.f;
+
+inline bool force_sv_cheats = false;
+inline bool force_sv_cheats_state = true;
 
 } // global::test
 

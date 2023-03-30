@@ -3,10 +3,9 @@
 #include <winuser.h>
 #include <Windows.h>
 
-#include "../global.hpp"
-#include "../game.hpp"
+#include <client/game.hpp>
 
-#include "tabs.hpp"
+#include <client/menu/tabs.hpp>
 
 static bool menu_open = false;
 static bool last_cflag = false;

@@ -48,3 +48,10 @@ target_link_libraries(
   imgui
   # kahel_winpe
 )
+
+# Makes <client/...> available. Prefer this instead of nesting [..]
+target_include_directories(
+  ${PROJECT_NAME}
+  PRIVATE
+  "${CMAKE_SOURCE_DIR}"
+)
