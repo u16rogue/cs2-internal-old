@@ -67,13 +67,7 @@ def_hk(bool, cs2_engine_get_sv_cheats_flag) {
 }
 
 def_hk(void *, cs2_client_get_cvar_value, cs2::convar_proxy * cvar, int flag) {
-  static void * sv_cheats = nullptr;
-  if (!sv_cheats && std::string_view(cvar->data->name) == "sv_cheats") {
-    sv_cheats = cvar;
-    cs2log("Found sv_cheats!! @ {}", (void *)cvar->data);
-  }
-
-  if (sv_cheats && global::test::force_sv_cheats && cvar == sv_cheats) {
+  if (global::test::force_sv_cheats && std::string_view(cvar->data->name) == "sv_cheats") {
     return &global::test::force_sv_cheats_state;
   }
 
