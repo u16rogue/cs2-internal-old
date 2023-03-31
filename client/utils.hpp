@@ -1,6 +1,7 @@
 #pragma once
 
 #include <client/cs2/interface.hpp>
+#include <common/types.hpp>
 #include <string_view>
 
 namespace utils {
@@ -37,6 +38,19 @@ private:
 private:
   void * base;
   cs2::intfreg * intf_root = nullptr;
-};
+}; // solib
+
+auto rel2abs(void * inst, usize dispoffset) -> void *;
+auto is_jmp(void * fn) -> bool;
+auto parse_trampoline_entry_shell(void * hooked_function) -> void *;
+
+// [31-03-2023] Use this everytime gameoverlay or any other (including self) hooks a function and you want to call original
+// if needed repeatedly use `is_jump` first then use `parse_trampoline_entry_shell` to cache the `original` then call that instead
+template <typename R, typename... vargs_t>
+auto safe_trampoline_to_original_call(R(*fn)(vargs_t...), vargs_t... vargs) -> R {
+  if (!is_jmp(fn))
+    return fn(vargs...);
+  return reinterpret_cast<decltype(fn)>(parse_trampoline_entry_shell(fn))(vargs...); // [31-03-2023] null checks? nah
+}
 
 } // utils

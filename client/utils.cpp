@@ -1,6 +1,7 @@
 #include "utils.hpp"
 #include <Windows.h>
 #include <common/types.hpp>
+#include <common/logging.hpp>
 
 utils::solib::solib(void * base)
   : base(base) {}
@@ -73,4 +74,41 @@ auto utils::interface_iterator::operator!=(const interface_iterator & rhs) -> bo
 
 auto utils::interface_iterator::operator*() -> cs2::intfreg * {
   return current;
+}
+
+auto utils::rel2abs(void * inst, usize dispoffset) -> void * {
+  u8 * p = reinterpret_cast<u8 *>(inst);
+  return (p + dispoffset + sizeof(idiff)) + *reinterpret_cast<idiff *>(&p[dispoffset]);
+}
+
+auto utils::is_jmp(void * fn) -> bool {
+  return reinterpret_cast<u8 *>(fn)[0] == 0xE9;
+}
+
+auto utils::parse_trampoline_entry_shell(void * hooked_function) -> void * {
+  u8 * p = reinterpret_cast<u8 *>(hooked_function);
+  if (!is_jmp(p)) {
+    cs2log("{} / Target is not hooked.", hooked_function);
+    return nullptr;
+  }
+
+  u8 * tramp_to_hk = reinterpret_cast<u8 *>(rel2abs(p, 1));
+  if (!is_jmp(tramp_to_hk)) {
+    cs2log("{} / Assumed trampoline shell has no hook jump.", hooked_function);
+    return nullptr;
+  }
+
+  u8 * jmp_to_original = tramp_to_hk - 5; 
+  if (!is_jmp(jmp_to_original)) {
+    cs2log("{} / Assumed trampoline shell has no original entry jump.", hooked_function);
+    return nullptr;
+  }
+
+  u8 * post_original_entry = reinterpret_cast<u8 *>(rel2abs(jmp_to_original, 1));
+
+  usize overwritten_sz = post_original_entry - p;
+  // cs2log("Hook overwrote {} bytes", overwritten_sz);
+  void * original_tramp = jmp_to_original - overwritten_sz;
+  // cs2log("Original entry: {}", original_tramp);
+  return original_tramp;
 }

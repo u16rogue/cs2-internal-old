@@ -6,7 +6,6 @@
 
 namespace cs2 {
 
-
 struct FCVAR {
   using type = u32;
 

@@ -50,8 +50,14 @@ static auto convar_dump() -> void {
     cs2log("concom count: {}", x);
   }
 
+  ImGui::SameLine();
+  if (ImGui::Button("Clear##cs2condump")) {
+  }
+  ImGui::SameLine();
+
   static char cvarname[256] = {};
   static void * cvar = nullptr;
+  ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.45);
   ImGui::InputText("##cs2convarname", cvarname, sizeof(cvarname));
   ImGui::SameLine();
   if (ImGui::Button("Find ConVar")) {

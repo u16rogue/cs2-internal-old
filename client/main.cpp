@@ -5,7 +5,9 @@
 
 #include <metapp/metapp.hpp>
 // #include <kahel-winpe/kahel-winpe.hpp>
+#include <client/utils.hpp>
 
+#include "client/utils.hpp"
 #include "game.hpp"
 #include "hooks.hpp"
 
@@ -25,6 +27,7 @@ static auto WINAPI init_thread(LPVOID arg) -> DWORD {
   game::init();
   hooks::install();
 
+  utils::parse_trampoline_entry_shell(reinterpret_cast<void *>(&LoadLibraryW));
   return 0;
 }
 
