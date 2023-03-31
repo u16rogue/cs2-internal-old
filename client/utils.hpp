@@ -40,6 +40,7 @@ private:
   cs2::intfreg * intf_root = nullptr;
 }; // solib
 
+auto abs2relu32(void * from, usize dispoffset, void * to) -> idiff;
 auto rel2abs(void * inst, usize dispoffset) -> void *;
 auto is_jmp(void * fn) -> bool;
 auto jmp2abs(void * inst) -> void *;

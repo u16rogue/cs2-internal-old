@@ -76,6 +76,13 @@ auto utils::interface_iterator::operator*() -> cs2::intfreg * {
   return current;
 }
 
+auto utils::abs2relu32(void * from, usize dispoffset, void * to) -> idiff {
+  u8 * f = reinterpret_cast<u8 *>(from);
+  u8 * t = reinterpret_cast<u8 *>(to);
+  auto ubmagic = t - (f + dispoffset + 4);
+  return ubmagic;
+}
+
 auto utils::rel2abs(void * inst, usize dispoffset) -> void * {
   u8 * p = reinterpret_cast<u8 *>(inst);
   return (p + dispoffset + sizeof(idiff)) + *reinterpret_cast<idiff *>(&p[dispoffset]);

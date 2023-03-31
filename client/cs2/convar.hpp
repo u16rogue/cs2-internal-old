@@ -72,6 +72,11 @@ static_assert(sizeof(convar_callback_entry_t) == 0x20, "Invalid cs2::convar_call
 // 31-03-2023 use concom "cvarlist" for ref
 class iconvar {
 public:
+  // NOTE: to do the the same thing with `find_convar` just do the same  thing but for a concom like `thirdperson`
+  // NOTE: iteration and id lookup can be found at `tier0` when looking around `cvarlist`
+  
+  // NOTE: find these by looking at register convar since it first finds the convar by name to check if its already registered.
+  // ~~T0DO: literally forgot how i found this. figure it out again~~
   inline auto find_convar(convar_id_t * out_id, char * name, u64 justsetto0) -> void ** {
     return reinterpret_cast<void ** (***)(void *, convar_id_t *, char *, u64)>(this)[0][11](this, out_id, name, justsetto0);
   }
@@ -105,6 +110,7 @@ public:
   }
 
 public:
+  // TODO: move these to cpp
   inline auto _get_concom_callback_entry(concom_data * concom) -> convar_callback_entry_t * {
     return &callbacks[concom->cb_id];
   }

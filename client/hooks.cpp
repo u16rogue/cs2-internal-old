@@ -247,8 +247,8 @@ static auto obs_present_fix(void *& target) -> bool {
   }
 
   mpp_defer {
-    cs2log("Restoring protection...");
-    VirtualProtect(global::obs_present_ptr, sizeof(uiptr), oprot, &oprot);
+    if (!VirtualProtect(global::obs_present_ptr, sizeof(uiptr), oprot, &oprot))
+      cs2log("Failed to reapply original protection. Ignoring but this can become an issue.");
   };
 
   if (!create_hk(obs2gameoverlay_dxgi_Present, tramp_proxy - 5)) {
@@ -256,7 +256,6 @@ static auto obs_present_fix(void *& target) -> bool {
     return false;
   }
 
-  cs2log("Applying pointer swap hook");
   obs_Present = reinterpret_cast<decltype(dxgi_Present)>(*global::obs_present_ptr);
   *global::obs_present_ptr = reinterpret_cast<void *>(&obsproxy_dxgi_Present);
 
@@ -267,24 +266,25 @@ static auto obs_present_fix(void *& target) -> bool {
 
 static auto post_entry_fix_present_hk(void *& target) -> bool {
   return false;
-#if 0 // [31/03/2023] maybe next time :)
-  constexpr int jump_target_offset = 5;
+
+#if 0 // [01/04/2023] stack corruption, maybe in the future ill fix this
+  constexpr int jump_target_offset = 10;
+
   static u8 sh_Present_original[] = {
-    0x48, 0x89, 0x5C, 0x24, 0x10,                   // mov     [rsp-8+arg_8], rbx
-    0x48, 0x89, 0x74, 0x24, 0x20,                   // mov     [rsp-8+arg_18], rsi
-    0x55,                                           // push    rbp
-    0x57,                                           // push    rdi
-    0x41, 0x56,                                     // push    r14
-    0x48, 0x8D, 0x6C, 0x24, 0x90,                   // lea     rbp, [rsp-70h]                                                               //
-    0xFF, 0x25, 0x00, 0x00, 0x00, 0x00,             // jmp     <rip + 0>
-    0x48, 0x81, 0xEC, 0x70, 0x01, 0x00, 0x00,       // sub     rsp, 170h
-    0x48, 0x8B, 0x05, 0x57, 0x9E, 0x0C, 0x00,       // mov     rax, cs:__security_cookie                                                //
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // PTR: DXGI.Present + sizeof(sh_Present_original) - sizeof(uiptr)
+    0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov     rax, <cs2int_Present>
+    0xFF, 0xD0,                                                 // call    rax
+    0x55,                                                       // push    rbp
+    0x57,                                                       // push    rdi
+    0x41, 0x56,                                                 // push    r14
+    0x48, 0x8D, 0x6C, 0x24, 0x90,                               // lea     rbp, [rsp-70h]  
+    0x48, 0x81, 0xEC, 0x70, 0x01, 0x00, 0x00,                   // sub     rsp, 170h 
+    0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov     rax, <dxgi.Present + sizeof(sh_Present_original)>
+    0xFF, 0xE0,                                                 // jmp     rax
   };                                 
 
   u8 * p = reinterpret_cast<u8 *>(target);
-  for (int i = jump_target_offset; i < sizeof(sh_Present_original) - sizeof(uiptr); ++i) {
-    if (p[i] != sh_Present_original[i]) {
+  for (int i = 0; i < 16; ++i) {
+    if (p[jump_target_offset + i] != sh_Present_original[i + 12]) {
       cs2log("Mismatch of expected bytes for DXGI.Present.");
       return false;
     }
@@ -295,13 +295,28 @@ static auto post_entry_fix_present_hk(void *& target) -> bool {
     return false;
   }
 
-  *reinterpret_cast<void **>(sh_Present_original + sizeof(sh_Present_original) - sizeof(uiptr)) = p + sizeof(sh_Present_original) - sizeof(uiptr);
-  dxgi_Present = reinterpret_cast<decltype(dxgi_Present)>(&sh_Present_original);
+  *reinterpret_cast<void **>(sh_Present_original + 2)  = reinterpret_cast<void *>(&cs2int_Present);
+  *reinterpret_cast<void **>(sh_Present_original + 30) = p + 0x1A;
 
   u8 * jmp_target = p + jump_target_offset;
-  u8 jmp_shell[] = { 0xE9, 0x00, 0x00, 0x00, 0x00 };
+  u8 jmp_shell[] = {
+    0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov     rax, <sh_Present_original>
+    0xFF, 0xE0,                                                 // jmp     rax
+ };
 
-  *reinterpret_cast<idiff *>(&jmp_shell[1]) = (jmp_target + sizeof(jmp_shell)) - reinterpret_cast<u8 *>(&__hk_dxgi_Present);
+  *reinterpret_cast<void **>(jmp_shell + 2) = &sh_Present_original;
+
+  DWORD oprot = 0;
+  if (!VirtualProtect(jmp_target, sizeof(jmp_shell), PAGE_EXECUTE_READWRITE, &oprot)) {
+    cs2log("Failed to change DXGI.Present protection for patching.");
+    return false;
+  }
+
+  mpp_defer {
+    if (!VirtualProtect(jmp_target, sizeof(jmp_shell), oprot, &oprot))
+      cs2log("Failed to reapply original protection. Ignoring but this can become an issue.");
+  };
+
   for (int i = 0; i < sizeof(jmp_shell); ++i) {
     jmp_target[i] = jmp_shell[i];
   }
