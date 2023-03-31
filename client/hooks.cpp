@@ -1,8 +1,10 @@
 #include "hooks.hpp"
+#include "client/utils.hpp"
 #include <common/mem.hpp>
 
 #include <Windows.h>
 #include <MinHook.h>
+#include <Psapi.h>
 
 #include <common/logging.hpp>
 #include <common/types.hpp>
@@ -10,7 +12,12 @@
 
 #include <dxgi.h>
 #include <d3d11.h>
+#include <iterator>
+#include <libloaderapi.h>
+#include <memoryapi.h>
+#include <processthreadsapi.h>
 #include <winerror.h>
+#include <winnt.h>
 #include <winuser.h>
 
 #include <imgui.h>
@@ -79,7 +86,7 @@ def_hk(void *, cs2_client_get_cvar_value, cs2::convar_proxy * cvar, int flag) {
 
 static ID3D11RenderTargetView * dx_render_target_view = nullptr;
 
-def_hk(HRESULT, dxgi_Present, IDXGISwapChain * self, UINT SyncInterval, UINT Flags) {
+static auto cs2int_Present() -> void {
   ImGui_ImplDX11_NewFrame();
   ImGui_ImplWin32_NewFrame();
   ImGui::NewFrame();
@@ -89,6 +96,10 @@ def_hk(HRESULT, dxgi_Present, IDXGISwapChain * self, UINT SyncInterval, UINT Fla
   ImGui::Render();
   game::d3d_instance->device_context->OMSetRenderTargets(1, &dx_render_target_view, nullptr);
   ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+def_hk(HRESULT, dxgi_Present, IDXGISwapChain * self, UINT SyncInterval, UINT Flags) {
+  cs2int_Present();  
   return dxgi_Present(self, SyncInterval, Flags);
 }
 
@@ -173,6 +184,132 @@ static auto prep_render() -> bool {
   return true;
 }
 
+static decltype(dxgi_Present) obs_Present = nullptr;
+static auto obsproxy_dxgi_Present(IDXGISwapChain * self, UINT SyncInterval, UINT Flags) -> HRESULT {
+  if (global::obs_presence) {
+    cs2int_Present();
+  }
+  return obs_Present(self, SyncInterval, Flags);
+}
+
+def_hk(HRESULT, obs2gameoverlay_dxgi_Present, IDXGISwapChain * self, UINT SyncInterval, UINT Flags) {
+  if (!global::obs_presence) {
+    cs2int_Present();
+  }
+  return obs2gameoverlay_dxgi_Present(self, SyncInterval, Flags);
+}
+
+static auto obs_present_fix(void *& target) -> bool {
+  HMODULE graphicshook = GetModuleHandleA("graphics-hook64.dll");
+  if (!graphicshook)
+    return false;
+
+  bool failed = true;
+  mpp_defer {
+    if (failed) {
+      cs2log("OBS fix failed! Falling back...");
+    }
+  };
+
+  cs2log("OBS detected! Applying OBS fix...");
+
+  MODULEINFO mi {};
+  if (!GetModuleInformation(GetCurrentProcess(), graphicshook, &mi, sizeof(mi))) {
+    cs2log("Cant gather module info.");
+    return false;
+  }
+
+  u8 * fnpt = reinterpret_cast<u8 *>(target);
+  if (fnpt[0] != 0xE9) {
+    cs2log("Expected x86 relative jump on function, non found. (E9 00000000)");
+    return false;
+  }
+
+  u8 * tramp_proxy = reinterpret_cast<u8 *>(utils::rel2abs(fnpt, 1));
+  if (*reinterpret_cast<u16 *>(tramp_proxy) != *reinterpret_cast<const u16 *>("\xFF\x25")) {
+    cs2log("Expected x64 ptr jump on trampoline proxy, non found. (FF25 00000000)");
+    return false;
+  }
+
+  if ((tramp_proxy - 0x5)[0] != 0xE9) {
+    cs2log("Expected x86 relative jump on trampoline original proxy to gameoverlayrenderer, non found. (E9 00000000)");
+    return false;
+  }
+
+  global::obs_present_ptr = reinterpret_cast<void **>(utils::rel2abs(tramp_proxy, 2));
+  cs2log("OBS Present pp: {}", (void *)global::obs_present_ptr);
+
+  DWORD oprot = 0;
+  if (!VirtualProtect(global::obs_present_ptr, sizeof(uiptr), PAGE_EXECUTE_READWRITE, &oprot)) {
+    cs2log("Failed to change R* to RWX...");
+    global::obs_present_ptr = nullptr;
+    return false;
+  }
+
+  mpp_defer {
+    cs2log("Restoring protection...");
+    VirtualProtect(global::obs_present_ptr, sizeof(uiptr), oprot, &oprot);
+  };
+
+  if (!create_hk(obs2gameoverlay_dxgi_Present, tramp_proxy - 5)) {
+    cs2log("Failed to hook proxy from obs to gameoverlay");
+    return false;
+  }
+
+  cs2log("Applying pointer swap hook");
+  obs_Present = reinterpret_cast<decltype(dxgi_Present)>(*global::obs_present_ptr);
+  *global::obs_present_ptr = reinterpret_cast<void *>(&obsproxy_dxgi_Present);
+
+  failed = false;
+  cs2log("OBS fix applied!");
+  return true;
+}
+
+static auto post_entry_fix_present_hk(void *& target) -> bool {
+  return false;
+#if 0 // [31/03/2023] maybe next time :)
+  constexpr int jump_target_offset = 5;
+  static u8 sh_Present_original[] = {
+    0x48, 0x89, 0x5C, 0x24, 0x10,                   // mov     [rsp-8+arg_8], rbx
+    0x48, 0x89, 0x74, 0x24, 0x20,                   // mov     [rsp-8+arg_18], rsi
+    0x55,                                           // push    rbp
+    0x57,                                           // push    rdi
+    0x41, 0x56,                                     // push    r14
+    0x48, 0x8D, 0x6C, 0x24, 0x90,                   // lea     rbp, [rsp-70h]                                                               //
+    0xFF, 0x25, 0x00, 0x00, 0x00, 0x00,             // jmp     <rip + 0>
+    0x48, 0x81, 0xEC, 0x70, 0x01, 0x00, 0x00,       // sub     rsp, 170h
+    0x48, 0x8B, 0x05, 0x57, 0x9E, 0x0C, 0x00,       // mov     rax, cs:__security_cookie                                                //
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // PTR: DXGI.Present + sizeof(sh_Present_original) - sizeof(uiptr)
+  };                                 
+
+  u8 * p = reinterpret_cast<u8 *>(target);
+  for (int i = jump_target_offset; i < sizeof(sh_Present_original) - sizeof(uiptr); ++i) {
+    if (p[i] != sh_Present_original[i]) {
+      cs2log("Mismatch of expected bytes for DXGI.Present.");
+      return false;
+    }
+  }
+
+  if (DWORD oprot = 0; !VirtualProtect(reinterpret_cast<void *>(&sh_Present_original), sizeof(sh_Present_original), PAGE_EXECUTE_READWRITE, &oprot)) {
+    cs2log("Failed to change shell protection.");
+    return false;
+  }
+
+  *reinterpret_cast<void **>(sh_Present_original + sizeof(sh_Present_original) - sizeof(uiptr)) = p + sizeof(sh_Present_original) - sizeof(uiptr);
+  dxgi_Present = reinterpret_cast<decltype(dxgi_Present)>(&sh_Present_original);
+
+  u8 * jmp_target = p + jump_target_offset;
+  u8 jmp_shell[] = { 0xE9, 0x00, 0x00, 0x00, 0x00 };
+
+  *reinterpret_cast<idiff *>(&jmp_shell[1]) = (jmp_target + sizeof(jmp_shell)) - reinterpret_cast<u8 *>(&__hk_dxgi_Present);
+  for (int i = 0; i < sizeof(jmp_shell); ++i) {
+    jmp_target[i] = jmp_shell[i];
+  }
+
+  return true;
+#endif
+}
+
 auto hooks::install() -> bool {
   cs2log("Installing hooks...");
 
@@ -230,11 +367,10 @@ auto hooks::install() -> bool {
     return false;
   }
 
-
   cs2log("Hooking dxgi.Present...");
   if (void * dxgi_Present_target = reinterpret_cast<void ***>(game::d3d_instance->info->swapchain)[0][8]; dxgi_Present_target) {
     cs2log("dxgi.Present @ {}", dxgi_Present_target);
-    if (!create_hk(dxgi_Present, dxgi_Present_target)) {
+    if (!post_entry_fix_present_hk(dxgi_Present_target) && !obs_present_fix(dxgi_Present_target) && !create_hk(dxgi_Present, dxgi_Present_target)) {
       cs2log("Failed to hook dxgi.Present");
       return false;
     }
@@ -267,6 +403,12 @@ auto hooks::install() -> bool {
 
 auto hooks::uninstall() -> bool { 
   cs2log("Uninstalling hooks...");
+  if (global::obs_present_ptr) {
+    DWORD oprot = 0;
+    VirtualProtect(global::obs_present_ptr, sizeof(uiptr), PAGE_EXECUTE_READWRITE, &oprot);
+    *global::obs_present_ptr = reinterpret_cast<void **>(obs_Present);
+    VirtualProtect(global::obs_present_ptr, sizeof(uiptr), oprot, &oprot);
+  }
   MH_DisableHook(MH_ALL_HOOKS);
   MH_Uninitialize();
   cs2log("Hooks uninstalled!");

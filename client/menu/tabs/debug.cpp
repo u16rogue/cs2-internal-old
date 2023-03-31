@@ -144,6 +144,8 @@ static auto test_features() -> void {
   if (!ImGui::BeginTabItem("Test features"))
     return;
 
+  if (global::obs_present_ptr)
+    ImGui::Checkbox("OBS Presence", &global::obs_presence);
   ImGui::Checkbox("Engine glow (spec)", &global::test::glow);
   ImGui::SameLine();
   ImGui::ColorEdit4("##cs2cglow", global::test::rgb, ImGuiColorEditFlags_NoInputs);

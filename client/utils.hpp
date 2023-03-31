@@ -42,6 +42,7 @@ private:
 
 auto rel2abs(void * inst, usize dispoffset) -> void *;
 auto is_jmp(void * fn) -> bool;
+auto jmp2abs(void * inst) -> void *;
 auto parse_trampoline_entry_shell(void * hooked_function) -> void *;
 
 // [31-03-2023] Use this everytime gameoverlay or any other (including self) hooks a function and you want to call original

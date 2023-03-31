@@ -27,7 +27,6 @@ static auto WINAPI init_thread(LPVOID arg) -> DWORD {
   game::init();
   hooks::install();
 
-  utils::parse_trampoline_entry_shell(reinterpret_cast<void *>(&LoadLibraryW));
   return 0;
 }
 

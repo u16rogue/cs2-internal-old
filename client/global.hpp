@@ -2,6 +2,9 @@
 
 namespace global {
 
+inline bool    obs_presence    = false;
+inline void ** obs_present_ptr = nullptr;
+
 namespace test {
 
 inline bool  glow = false;

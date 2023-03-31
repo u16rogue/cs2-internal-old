@@ -82,7 +82,24 @@ auto utils::rel2abs(void * inst, usize dispoffset) -> void * {
 }
 
 auto utils::is_jmp(void * fn) -> bool {
-  return reinterpret_cast<u8 *>(fn)[0] == 0xE9;
+  return reinterpret_cast<u8 *>(fn)[0] == 0xE9 || *reinterpret_cast<u16 *>(fn) == *reinterpret_cast<const u16 *>("\xFF\x25");
+}
+
+static auto jmp2abs_e9(void * inst) -> void * {
+  return utils::rel2abs(inst, 1);
+}
+
+static auto jmp2abs_ff25(void * inst) -> void * {
+  u8 * p = reinterpret_cast<u8 *>(inst);
+  return *reinterpret_cast<void **>(utils::rel2abs(inst, 2));
+}
+
+auto utils::jmp2abs(void * inst) -> void * {
+  if (reinterpret_cast<u8 *>(inst)[0] == 0xE9)
+    return jmp2abs_e9(inst);
+  else if (*reinterpret_cast<u16 *>(inst) == *reinterpret_cast<const u16 *>("\xFF\x25"))
+    return jmp2abs_ff25(inst);
+  return nullptr;
 }
 
 auto utils::parse_trampoline_entry_shell(void * hooked_function) -> void * {
