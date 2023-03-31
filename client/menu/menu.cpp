@@ -46,8 +46,8 @@ auto menu::toggle(int v) -> void {
 
 auto menu::imgui_render() -> void {
   auto * fg = ImGui::GetBackgroundDrawList();
-  fg->AddText(ImVec2(3.f, 3.f), 0xFF000000, "cunnyware // keso.moe");
-  fg->AddText(ImVec2(2.f, 2.f), 0xFFFFFFFF, "cunnyware // keso.moe");
+  fg->AddText(ImVec2(3.f, 3.f), 0xFF000000, CS2_EXTERNAL_NAME);
+  fg->AddText(ImVec2(2.f, 2.f), 0xFFFFFFFF, CS2_EXTERNAL_NAME);
 
   if (!menu_open)
     return;
@@ -58,7 +58,7 @@ auto menu::imgui_render() -> void {
     return 0;
   }();
 
-  ImGui::Begin("cunnyware // keso.moe");
+  ImGui::Begin(CS2_EXTERNAL_NAME);
   ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
 
   if (ImGui::BeginTabBar("##cs2tabs")) {

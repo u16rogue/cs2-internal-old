@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 3.18)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 option(CS2INT_LOGGING "Enables the logging macro to be enabled (cs2log)" ON)
+set(CS2_EXTERNAL_NAME "cs2client" CACHE STRING "External name of the project.")
+add_compile_definitions(
+  CS2_EXTERNAL_NAME="${CS2_EXTERNAL_NAME}"
+)
+
+message("-- cs2int > Using external name of \"${CS2_EXTERNAL_NAME}\"")
 
 if (CS2INT_LOGGING)
   add_compile_definitions(CS2INT_COMMON_LOGGING=1)

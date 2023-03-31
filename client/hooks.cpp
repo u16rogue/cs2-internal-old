@@ -67,6 +67,7 @@ def_hk(bool, cs2_engine_get_sv_cheats_flag) {
 }
 
 def_hk(void *, cs2_client_get_cvar_value, cs2::convar_proxy * cvar, int flag) {
+  // TODO: use caching again string comp sucks
   if (global::test::force_sv_cheats && std::string_view(cvar->data->name) == "sv_cheats") {
     return &global::test::force_sv_cheats_state;
   }
