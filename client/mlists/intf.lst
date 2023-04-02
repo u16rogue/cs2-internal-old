@@ -1,0 +1,1 @@
+_LOAD_INTERFACE(tier0, cs2::iconvar, convar, "VEngineCvar007")

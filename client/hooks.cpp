@@ -73,13 +73,25 @@ def_hk(bool, cs2_engine_get_sv_cheats_flag) {
   return cs2_engine_get_sv_cheats_flag();
 }
 
-def_hk(void *, cs2_client_get_cvar_value, cs2::convar_proxy * cvar, int flag) {
+def_hk(void *, cs2_client_get_cvar_pvalue, cs2::convar_proxy * cvar, int flag) {
   // TODO: use caching again string comp sucks
   if (global::test::force_sv_cheats && std::string_view(cvar->data->name) == "sv_cheats") {
     return &global::test::force_sv_cheats_state;
   }
 
-  return cs2_client_get_cvar_value(cvar, flag);
+  if (menu::is_open() && (std::string_view(cvar->data->name) == "imgui_enable_input" || std::string_view(cvar->data->name) == "imgui_enable")) {
+    static bool xd = true;
+    return &xd;
+  }
+
+  return cs2_client_get_cvar_pvalue(cvar, flag);
+}
+
+def_hk(void, cs2_client_set_cvar_value, cs2::convar_proxy * cvar, u64 flag, u64 value) {
+  if (menu::is_open() && std::string_view(cvar->data->name) == "stats_display" && value == 5) {
+    value = 0;
+  }
+  return cs2_client_set_cvar_value(cvar, flag, value);
 }
 
 // ---------------------------------------------------------------------------------------------------- 
@@ -280,7 +292,7 @@ static auto post_entry_fix_present_hk(void *& target) -> bool {
     0x48, 0x81, 0xEC, 0x70, 0x01, 0x00, 0x00,                   // sub     rsp, 170h 
     0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov     rax, <dxgi.Present + sizeof(sh_Present_original)>
     0xFF, 0xE0,                                                 // jmp     rax
-  };                                 
+  };
 
   u8 * p = reinterpret_cast<u8 *>(target);
   for (int i = 0; i < 16; ++i) {
@@ -349,8 +361,14 @@ auto hooks::install() -> bool {
   }
 
   cs2log("Hooking cs2_client_get_cvar_value...");
-  if (!create_hk(cs2_client_get_cvar_value, client + 0xED3B70)) {
+  if (!create_hk(cs2_client_get_cvar_pvalue, client + 0xED3B70)) {
     cs2log("Failed to hook cs2_client_get_cvar_value");
+    return false;
+  }
+
+  cs2log("Hooking cs2_client_set_cvar_value...");
+  if (!create_hk(cs2_client_set_cvar_value, client + 0xFBE00)) {
+    cs2log("Failed to hook cs2_client_set_cvar_value");
     return false;
   }
 
@@ -376,11 +394,13 @@ auto hooks::install() -> bool {
     return false;
   }
 
+#if 0
   cs2log("Hooking ClipCursor...");
   if (!create_hk(_ClipCursor, reinterpret_cast<void **>(&ClipCursor))) {
     cs2log("Failed to hook ClipCursor");
     return false;
   }
+#endif
 
   cs2log("Hooking dxgi.Present...");
   if (void * dxgi_Present_target = reinterpret_cast<void ***>(game::d3d_instance->info->swapchain)[0][8]; dxgi_Present_target) {

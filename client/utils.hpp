@@ -7,6 +7,7 @@
 
 namespace utils {
 
+auto find_com(std::string_view name) -> cs2::convar_data *;
 auto find_concom(std::string_view concom) -> cs2::concom_data *;
 auto find_concom_callback(std::string_view concom) -> void(*)(void);
 

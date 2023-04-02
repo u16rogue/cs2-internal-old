@@ -27,7 +27,7 @@ static auto convar_dump() -> void {
 
   if (ImGui::Button("Dump convar")) {
     u64 id = 0;
-    void * curcvar = *game::intf::convar->iter_convar_first(&id);
+    auto curcvar = *game::intf::convar->iter_convar_first(&id);
     int x = 0;
     while (id != cs2::INVALID_CONVAR_ID) {
       cs2log("ConVar: {}", game::intf::convar->get_cvar_from_id(id)->name);
@@ -39,7 +39,7 @@ static auto convar_dump() -> void {
   ImGui::SameLine();
   if (ImGui::Button("Dump concom")) {
     u64 id = 0;
-    void * curcvar = *game::intf::convar->iter_concom_first(&id);
+    auto curcvar = *game::intf::convar->iter_concom_first(&id);
     int x = 0;
     while (id != cs2::INVALID_CONCOM_ID) {
       auto * cc = game::intf::convar->get_concom_from_id(id);
@@ -49,6 +49,16 @@ static auto convar_dump() -> void {
     }
     cs2log("concom count: {}", x);
   }
+  ImGui::SameLine();
+  if (ImGui::Button("Manual dump convar")) {
+    for (int i = 0; i < game::intf::convar->entries_count; ++i) {
+      auto & entry = game::intf::convar->entries[i];
+      if (entry.data)
+        cs2log("MConVar dump: {}", entry.data->name);
+      else
+        cs2log("MConVar dump at index {} is empty.", i);
+    }
+  }
 
   ImGui::SameLine();
   if (ImGui::Button("Clear##cs2condump")) {
@@ -57,7 +67,7 @@ static auto convar_dump() -> void {
 
   static char cvarname[256] = {};
   static void * cvar = nullptr;
-  ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.45);
+  ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.25);
   ImGui::InputText("##cs2convarname", cvarname, sizeof(cvarname));
   ImGui::SameLine();
   if (ImGui::Button("Find ConVar")) {
@@ -80,6 +90,16 @@ static auto convar_dump() -> void {
       cvar = game::intf::convar->get_concom_from_id(id);
       auto * xd = (cs2::concom_data *)cvar;
       cs2log("Found {} (ID: {:x}) - Callback: {}", cvarname, id, game::intf::convar->_get_concom_callback(xd));
+    }
+  }
+
+  ImGui::SameLine();
+  if (ImGui::Button("Find entry")) {
+    auto * con = utils::find_com(cvarname);
+    if (!con) {
+      cs2log("Invalid ConCommand");
+    } else {
+      cs2log("Found {} @ {}", cvarname, (void *)con);
     }
   }
 
@@ -156,8 +176,7 @@ static auto test_features() -> void {
   ImGui::SameLine();
   ImGui::Checkbox("##cs2svcstate", &global::test::force_sv_cheats_state);
   if (ImGui::Button("Thirdperson")) {
-    static auto tpb_cb = utils::find_concom_callback("thirdperson");
-    tpb_cb();
+    game::concom::thirdperson();
   }
 
   ImGui::EndTabItem();

@@ -26,6 +26,17 @@ inline utils::solib rendersystem;
 
 namespace game::intf {
 
-inline cs2::iconvar * convar = nullptr;
+#define _LOAD_INTERFACE(m, t, n, id) inline t * n = nullptr;
+#include "mlists/intf.lst"
+#undef _LOAD_INTERFACE
 
 } // game::intf
+
+namespace game::concom {
+
+using concomfn_t = void(*)(void);
+#define _LOAD_CONCOMMAND_FN(x) inline concomfn_t x = nullptr;
+#include "mlists/concoms.lst"
+#undef _LOAD_CONCOMMAND_FN
+
+} // game::concom

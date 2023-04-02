@@ -5,6 +5,15 @@
 #include <common/logging.hpp>
 #include <client/game.hpp>
 
+auto utils::find_com(std::string_view name) -> cs2::convar_data * {
+  for (int i = 0; i < game::intf::convar->entries_count; ++i) {
+    auto & entry = game::intf::convar->entries[i];
+    if (name == entry.data->name)
+      return entry.data;
+  }
+  return nullptr;
+}
+
 auto utils::find_concom(std::string_view concom) -> cs2::concom_data * {
   cs2::concom_id_t id = 0;
   game::intf::convar->find_concommand(&id, concom.data());

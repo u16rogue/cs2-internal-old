@@ -69,14 +69,18 @@ struct convar_callback_entry_t {
 };
 static_assert(sizeof(convar_callback_entry_t) == 0x20, "Invalid cs2::convar_callback_entry_t");
 
-// 31-03-2023 use concom "cvarlist" for ref
+struct convar_reg_entry_t {
+  convar_data * data;
+  u64           flag;
+};
+
 class iconvar {
 public:
+  // [01/04.2023] ~
   // NOTE: to do the the same thing with `find_convar` just do the same  thing but for a concom like `thirdperson`
   // NOTE: iteration and id lookup can be found at `tier0` when looking around `cvarlist`
   
   // NOTE: find these by looking at register convar since it first finds the convar by name to check if its already registered.
-  // ~~T0DO: literally forgot how i found this. figure it out again~~
   inline auto find_convar(convar_id_t * out_id, char * name, u64 justsetto0) -> convar_id_t * {
     return reinterpret_cast<convar_id_t * (***)(void *, convar_id_t *, char *, u64)>(this)[0][11](this, out_id, name, justsetto0);
   }
@@ -85,8 +89,8 @@ public:
     return reinterpret_cast<convar_id_t * (***)(void *, convar_id_t *)>(this)[0][12](this, out_id);
   }
 
-  inline auto iter_convar_next(convar_id_t * out_id, void * current) -> convar_id_t * {
-    return reinterpret_cast<convar_id_t * (***)(void *, convar_id_t *, void *)>(this)[0][13](this, out_id, current);
+  inline auto iter_convar_next(convar_id_t * out_id, convar_id_t current) -> convar_id_t * {
+    return reinterpret_cast<convar_id_t * (***)(void *, convar_id_t *, convar_id_t)>(this)[0][13](this, out_id, current);
   }
 
   inline auto find_concommand(concom_id_t * out_id, const char * name) -> concom_id_t * {
@@ -97,8 +101,8 @@ public:
     return reinterpret_cast<concom_id_t * (***)(void *, concom_id_t *)>(this)[0][16](this, out_id);
   }
 
-  inline auto iter_concom_next(concom_id_t * out_id, void * current) -> concom_id_t * {
-    return reinterpret_cast<concom_id_t * (***)(void *, concom_id_t *, void *)>(this)[0][17](this, out_id, current);
+  inline auto iter_concom_next(concom_id_t * out_id, concom_id_t current) -> concom_id_t * {
+    return reinterpret_cast<concom_id_t * (***)(void *, concom_id_t *, concom_id_t)>(this)[0][17](this, out_id, current);
   }
 
   inline auto get_cvar_from_id(convar_id_t id) -> convar_data * {
@@ -129,10 +133,19 @@ public:
     return entry.data;
   }
 
-  u8 pad0[0x118];
+  u8  __pad0[0x40];
+  convar_reg_entry_t * entries; // [2/04/2023] Can find this by looking at iter_convar_next
+  u8  __pad1[0x28];
+  u32 entries_count;
+  u32 __pad2;
+  u8  __pad3[0xA0];
   convar_callback_entry_t * callbacks;
 };
-static_assert(offsetof(iconvar, callbacks) == 0x118, "Invalid cs2::iconvar");
+static_assert(
+    offsetof(iconvar, entries)       == 0x40
+ && offsetof(iconvar, entries_count) == 0x70
+ && offsetof(iconvar, callbacks)     == 0x118,
+    "Invalid cs2::iconvar");
 
 } // cs2
 

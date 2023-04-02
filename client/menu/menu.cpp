@@ -22,6 +22,7 @@ auto menu::toggle(int v) -> void {
     menu_open = v;
   }
 
+#if 0
   // TODO: lmao, implement this better
   if (menu_open) {
     ClipCursor(nullptr);
@@ -42,6 +43,7 @@ auto menu::toggle(int v) -> void {
   }
 
   ImGui::GetIO().MouseDrawCursor = menu_open || !last_cflag;
+#endif
 }
 
 auto menu::imgui_render() -> void {
