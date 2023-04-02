@@ -1,7 +1,24 @@
 #include "utils.hpp"
+#include "client/cs2/convar.hpp"
 #include <Windows.h>
 #include <common/types.hpp>
 #include <common/logging.hpp>
+#include <client/game.hpp>
+
+auto utils::find_concom(std::string_view concom) -> cs2::concom_data * {
+  cs2::concom_id_t id = 0;
+  game::intf::convar->find_concommand(&id, concom.data());
+  if (id == cs2::INVALID_CONCOM_ID)
+    return nullptr;
+  return game::intf::convar->get_concom_from_id(id);
+}
+
+auto utils::find_concom_callback(std::string_view concom) -> void(*)(void) {
+  cs2::concom_data * d = find_concom(concom);
+  if (!d)
+    return nullptr;
+  return reinterpret_cast<void(*)(void)>(game::intf::convar->_get_concom_callback(d));
+}
 
 utils::solib::solib(void * base)
   : base(base) {}

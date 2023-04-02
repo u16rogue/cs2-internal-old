@@ -156,11 +156,7 @@ static auto test_features() -> void {
   ImGui::SameLine();
   ImGui::Checkbox("##cs2svcstate", &global::test::force_sv_cheats_state);
   if (ImGui::Button("Thirdperson")) {
-    static void(*tpb_cb)(void) = (decltype(tpb_cb))game::intf::convar->_get_concom_callback(
-        game::intf::convar->get_concom_from_id(
-          (cs2::concom_id_t)*game::intf::convar->find_concommand((cs2::concom_id_t *)&tpb_cb, "thirdperson")
-        )
-    );
+    static auto tpb_cb = utils::find_concom_callback("thirdperson");
     tpb_cb();
   }
 

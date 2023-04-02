@@ -1,8 +1,9 @@
 #pragma once
 
 #include "imgui.h"
-#include "tabs/debug.hpp"
 #include <imgui.h>
+
+#include "tabs/debug.hpp"
 
 namespace menu {
 namespace details {

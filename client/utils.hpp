@@ -2,9 +2,13 @@
 
 #include <client/cs2/interface.hpp>
 #include <common/types.hpp>
+#include <client/cs2/convar.hpp>
 #include <string_view>
 
 namespace utils {
+
+auto find_concom(std::string_view concom) -> cs2::concom_data *;
+auto find_concom_callback(std::string_view concom) -> void(*)(void);
 
 struct interface_iterator {
   interface_iterator(cs2::intfreg * root);

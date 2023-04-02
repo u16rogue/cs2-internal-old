@@ -77,28 +77,28 @@ public:
   
   // NOTE: find these by looking at register convar since it first finds the convar by name to check if its already registered.
   // ~~T0DO: literally forgot how i found this. figure it out again~~
-  inline auto find_convar(convar_id_t * out_id, char * name, u64 justsetto0) -> void ** {
-    return reinterpret_cast<void ** (***)(void *, convar_id_t *, char *, u64)>(this)[0][11](this, out_id, name, justsetto0);
+  inline auto find_convar(convar_id_t * out_id, char * name, u64 justsetto0) -> convar_id_t * {
+    return reinterpret_cast<convar_id_t * (***)(void *, convar_id_t *, char *, u64)>(this)[0][11](this, out_id, name, justsetto0);
   }
 
-  inline auto iter_convar_first(convar_id_t * out_id) -> void ** {
-    return reinterpret_cast<void ** (***)(void *, convar_id_t *)>(this)[0][12](this, out_id);
+  inline auto iter_convar_first(convar_id_t * out_id) -> convar_id_t * {
+    return reinterpret_cast<convar_id_t * (***)(void *, convar_id_t *)>(this)[0][12](this, out_id);
   }
 
-  inline auto iter_convar_next(convar_id_t * out_id, void * current) -> void ** {
-    return reinterpret_cast<void ** (***)(void *, convar_id_t *, void *)>(this)[0][13](this, out_id, current);
+  inline auto iter_convar_next(convar_id_t * out_id, void * current) -> convar_id_t * {
+    return reinterpret_cast<convar_id_t * (***)(void *, convar_id_t *, void *)>(this)[0][13](this, out_id, current);
   }
 
-  inline auto find_concommand(concom_id_t * out_id, const char * name) -> void ** {
-    return reinterpret_cast<void ** (***)(void *, concom_id_t *, const char *)>(this)[0][15](this, out_id, name);
+  inline auto find_concommand(concom_id_t * out_id, const char * name) -> concom_id_t * {
+    return reinterpret_cast<concom_id_t * (***)(void *, concom_id_t *, const char *)>(this)[0][15](this, out_id, name);
   }
 
-  inline auto iter_concom_first(concom_id_t * out_id) -> void ** {
-    return reinterpret_cast<void ** (***)(void *, concom_id_t *)>(this)[0][16](this, out_id);
+  inline auto iter_concom_first(concom_id_t * out_id) -> concom_id_t * {
+    return reinterpret_cast<concom_id_t * (***)(void *, concom_id_t *)>(this)[0][16](this, out_id);
   }
 
-  inline auto iter_concom_next(concom_id_t * out_id, void * current) -> void ** {
-    return reinterpret_cast<void ** (***)(void *, concom_id_t *, void *)>(this)[0][17](this, out_id, current);
+  inline auto iter_concom_next(concom_id_t * out_id, void * current) -> concom_id_t * {
+    return reinterpret_cast<concom_id_t * (***)(void *, concom_id_t *, void *)>(this)[0][17](this, out_id, current);
   }
 
   inline auto get_cvar_from_id(convar_id_t id) -> convar_data * {
