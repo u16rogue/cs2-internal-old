@@ -40,12 +40,24 @@ auto utils::solib::acquire_intf_root() -> bool {
   return intf_root;
 }
 
-auto utils::solib::create_interface(std::string_view name) -> void * {
+auto utils::solib::create_interface(mpp::cmphstr str) -> void * {
   if (!acquire_intf_root())
     return nullptr;
 
   for (auto intf : interface_iterator(intf_root)) {
-    if (intf->name == name)
+    if (intf->name == str)
+      return intf->create();
+  }
+
+  return nullptr;
+}
+
+auto utils::solib::create_interface_partial(mpp::cmphstr_partial str) -> void * {
+  if (!acquire_intf_root())
+    return nullptr;
+
+  for (auto intf : interface_iterator(intf_root)) {
+    if (intf->name == str)
       return intf->create();
   }
 
@@ -54,14 +66,6 @@ auto utils::solib::create_interface(std::string_view name) -> void * {
 
 utils::solib::operator bool() const {
   return base;
-}
-
-auto utils::solib::create_interface_partial(std::string_view name) -> void * {
-  // TODO: implement
-  if (!acquire_intf_root())
-    return nullptr;
-
-  return nullptr;
 }
 
 auto utils::get_module_interface_linkedlist(void * hmodule) -> cs2::intfreg * {

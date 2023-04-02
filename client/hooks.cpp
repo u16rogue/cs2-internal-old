@@ -79,7 +79,9 @@ def_hk(void *, cs2_client_get_cvar_pvalue, cs2::convar_proxy * cvar, int flag) {
     return &global::test::force_sv_cheats_state;
   }
 
-  if (menu::is_open() && (std::string_view(cvar->data->name) == "imgui_enable_input" || std::string_view(cvar->data->name) == "imgui_enable")) {
+  static cs2::convar_data * imgui_enable_input = utils::find_com("imgui_enable_input");
+  static cs2::convar_data * imgui_enable = utils::find_com("imgui_enable");
+  if (menu::is_open() && (cvar->data == imgui_enable_input || cvar->data == imgui_enable)) {
     static bool xd = true;
     return &xd;
   }
@@ -88,7 +90,8 @@ def_hk(void *, cs2_client_get_cvar_pvalue, cs2::convar_proxy * cvar, int flag) {
 }
 
 def_hk(void, cs2_client_set_cvar_value, cs2::convar_proxy * cvar, u64 flag, u64 value) {
-  if (menu::is_open() && std::string_view(cvar->data->name) == "stats_display" && value == 5) {
+  static cs2::convar_data * stats_display = utils::find_com("stats_display");
+  if (menu::is_open() && cvar->data == stats_display && value == 5) {
     value = 0;
   }
   return cs2_client_set_cvar_value(cvar, flag, value);
@@ -149,6 +152,7 @@ def_hk(LRESULT, wndproc, HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
   return wndproc(hwnd, msg, wparam, lparam);
 }
 
+#if 0
 def_hk(BOOL, _ClipCursor, const RECT *lpRect) {
   if (menu::is_open()) {
     if (!lpRect)
@@ -158,6 +162,7 @@ def_hk(BOOL, _ClipCursor, const RECT *lpRect) {
 
   return _ClipCursor(lpRect);
 }
+#endif
 
 // ---------------------------------------------------------------------------------------------------- 
 
@@ -192,7 +197,7 @@ static auto prep_render() -> bool {
     cs2log("Failed to initialize ImGui.");
   }
 
-  cs2log("Renderer ready!1!! :3");
+  cs2log("Renderer ready!");
   return true;
 }
 

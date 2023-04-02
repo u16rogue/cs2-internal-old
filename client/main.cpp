@@ -24,8 +24,7 @@ static auto WINAPI init_thread(LPVOID arg) -> DWORD {
     freopen_s(&f, "CONOUT$", "w", stdout);
   };
 
-  game::init();
-  hooks::install();
+  game::init() && hooks::install();
 
   return 0;
 }

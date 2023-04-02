@@ -4,6 +4,7 @@
 #include <common/types.hpp>
 #include <client/cs2/convar.hpp>
 #include <string_view>
+#include <metapp/metapp.hpp>
 
 namespace utils {
 
@@ -32,8 +33,8 @@ struct solib {
 
   operator bool() const;
 
-  auto create_interface(std::string_view name) -> void *;
-  auto create_interface_partial(std::string_view name) -> void *;
+  auto create_interface(mpp::cmphstr str) -> void *;
+  auto create_interface_partial(mpp::cmphstr_partial str) -> void *;
 
   // TODO: Implement pattern scan, cached info, and other module stuff
 

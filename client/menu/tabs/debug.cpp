@@ -67,7 +67,7 @@ static auto convar_dump() -> void {
 
   static char cvarname[256] = {};
   static void * cvar = nullptr;
-  ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.25);
+  ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.15);
   ImGui::InputText("##cs2convarname", cvarname, sizeof(cvarname));
   ImGui::SameLine();
   if (ImGui::Button("Find ConVar")) {
