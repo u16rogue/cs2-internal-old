@@ -2,20 +2,22 @@
 
 #include <client/cs2/interface.hpp>
 #include <common/types.hpp>
+#include <common/mem.hpp>
 #include <client/cs2/convar.hpp>
 #include <string_view>
 #include <metapp/metapp.hpp>
 
 namespace utils {
 
-auto find_con(mpp::cmphstr name) -> cs2::convar_data *;
-#if 0 // TODO: fix this by figuring out how concoms are stored
-auto find_concom_callback(mpp::cmphstr concom) -> void(*)(void);
-#endif
+auto find_convar(mpp::cmphstr name) -> cs2::convar_data *;
+auto find_convar_str(std::string_view name) -> cs2::convar_data *;
 
-auto find_con_str(std::string_view name) -> cs2::convar_data *;
+auto find_concom(mpp::cmphstr name) -> cs2::concom_data *;
+auto find_concom_str(std::string_view name) -> cs2::concom_data *;
+
+auto get_concom_callback(cs2::concom_data * concom) -> void(*)(void);
+auto find_concom_callback(mpp::cmphstr concom) -> void(*)(void);
 auto find_concom_callback_str(std::string_view concom) -> void(*)(void);
-auto find_concom_str(std::string_view concom) -> cs2::concom_data *;
 
 struct interface_iterator {
   interface_iterator(cs2::intfreg * root);
@@ -48,7 +50,11 @@ struct solib {
   auto create_interface(mpp::cmphstr str) -> void *;
   auto create_interface_partial(mpp::cmphstr_partial str) -> void *;
 
-  // TODO: Implement pattern scan, cached info, and other module stuff
+  template <typename T, int sz, typename... walkers_t>
+  auto pattern_scan(T & out, const char (&pattern)[sz], const u8 mask, walkers_t... walkers) -> bool {
+    out = common::mem::pattern_scan<T>(base, size, pattern, mask, walkers...);
+    return out;
+  }
 
 private:
   auto acquire_intf_root() -> bool;

@@ -21,7 +21,7 @@ struct rel2abs {
 };
 
 template <typename T, int sz, typename... walkers_t>
-auto pattern_scan(void * start, usize size, const char (&pattern)[sz], u8 mask, walkers_t... walkers) -> T {
+auto pattern_scan(void * start, const usize size, const char (&pattern)[sz], const u8 mask, walkers_t... walkers) -> T {
   void * result = details::pattern_scan(start, size, pattern, sz - 1, mask);
   if (!result)
     return nullptr;

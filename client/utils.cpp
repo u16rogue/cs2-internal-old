@@ -7,25 +7,43 @@
 #include <common/logging.hpp>
 #include <client/game.hpp>
 
-auto utils::find_con(mpp::cmphstr name) -> cs2::convar_data * {
-  for (int i = 0; i < game::intf::convar->entries_count; ++i) {
-    auto & entry = game::intf::convar->entries[i];
+auto utils::find_convar(mpp::cmphstr name) -> cs2::convar_data * {
+  for (int i = 0; i < game::intf::convar->convar_count; ++i) {
+    auto & entry = game::intf::convar->convar_entries[i];
     if (name == entry.data->name)
       return entry.data;
   }
   return nullptr;
 }
 
-auto utils::find_con_str(std::string_view name) -> cs2::convar_data * {
-  for (int i = 0; i < game::intf::convar->entries_count; ++i) {
-    auto & entry = game::intf::convar->entries[i];
+auto utils::find_convar_str(std::string_view name) -> cs2::convar_data * {
+  for (int i = 0; i < game::intf::convar->convar_count; ++i) {
+    auto & entry = game::intf::convar->convar_entries[i];
     if (name == entry.data->name)
       return entry.data;
   }
   return nullptr;
 }
 
-static auto get_concom_callback(cs2::concom_data * concom) -> void(*)(void) {
+auto utils::find_concom(mpp::cmphstr name) -> cs2::concom_data * {
+  for (int i = 0; i < game::intf::convar->concom_count; ++i) {
+    auto & entry = game::intf::convar->concom_entries[i];
+    if (name == entry.name)
+      return &entry;
+  }
+  return nullptr;
+}
+
+auto utils::find_concom_str(std::string_view name) -> cs2::concom_data * {
+  for (int i = 0; i < game::intf::convar->concom_count; ++i) {
+    auto & entry = game::intf::convar->concom_entries[i];
+    if (name == entry.name)
+      return &entry;
+  }
+  return nullptr;
+}
+
+auto utils::get_concom_callback(cs2::concom_data * concom) -> void(*)(void) {
   if (!concom)
     return nullptr;
   auto & entry = game::intf::convar->callbacks[concom->cb_id];
@@ -42,23 +60,12 @@ static auto get_concom_callback(cs2::concom_data * concom) -> void(*)(void) {
   return reinterpret_cast<void(*)(void)>(out);
 }
 
-#if 0
 auto utils::find_concom_callback(mpp::cmphstr name) -> void(*)(void) {
-  cs2::concom_data * concom = reinterpret_cast<cs2::concom_data *>(find_con(name));
-  return get_concom_callback(concom);
+  return get_concom_callback(find_concom(name));
 }
-#endif
 
 auto utils::find_concom_callback_str(std::string_view name) -> void(*)(void) {
   return get_concom_callback(find_concom_str(name));
-}
-
-auto utils::find_concom_str(std::string_view concom) -> cs2::concom_data * {
-  cs2::concom_id_t id = 0;
-  game::intf::convar->find_concommand(&id, concom.data());
-  if (id == cs2::INVALID_CONCOM_ID)
-    return nullptr;
-  return game::intf::convar->get_concom_from_id(id);
 }
 
 utils::solib::solib(void * base)

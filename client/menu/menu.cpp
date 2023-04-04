@@ -72,5 +72,22 @@ auto menu::imgui_render() -> void {
 }
 
 auto menu::wndproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> bool {
-  return menu_open;
+  if (menu_open) {
+    switch (msg) {
+      case WM_KEYDOWN:
+      case WM_KEYUP:
+      case WM_MOUSEMOVE:
+      case WM_LBUTTONDOWN:
+      case WM_LBUTTONUP:
+      case WM_LBUTTONDBLCLK:
+      case WM_RBUTTONDOWN:
+      case WM_RBUTTONUP:
+      case WM_RBUTTONDBLCLK:
+      case WM_MBUTTONDOWN:
+      case WM_MBUTTONUP:
+      case WM_MBUTTONDBLCLK:
+        return true;
+    }
+  }
+  return false;
 }

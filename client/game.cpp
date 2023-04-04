@@ -11,19 +11,6 @@
 
 namespace mem = common::mem;
 
-template <typename T, int sz, typename... vargs_t>
-auto _deduce_T_pattern_scan(T & out, void * start, usize size, const char (&pattern)[sz], vargs_t... walkers) -> T {
-  out = mem::pattern_scan<T>(start, size, pattern, '\xCC', walkers...);
-  return out;
-}
-
-#define w_pattern_scan(out, id, pattern, ...)                                         \
-  if (!_deduce_T_pattern_scan(out, game::so::id.get_base<>(), game::so::id.get_size(), pattern __VA_OPT__(,) __VA_ARGS__)) { \
-    cs2log(#out "not found.");                                                        \
-    return false;                                                                     \
-  }                                                                                   \
-  cs2log(#out " found @ {}", reinterpret_cast<void *>(out))
-
 static auto init_so() -> bool {
   #define _LOAD_SO(_d, _n)                                      \
     if (game::so::_d = GetModuleHandleA(_n); !game::so::_d) {   \
@@ -38,19 +25,15 @@ static auto init_so() -> bool {
 }
 
 static auto init_patterns() -> bool {
-  w_pattern_scan(
-      game::d3d_instance.ptr,
-      rendersystem,
-      "\x48\x8B\x0D\xCC\xCC\xCC\xCC\x44\x8B\xCB\x45\x8B\xC7",
-      mem::rel2abs<3>()
-  );
+  #define _LOAD_PATTERN(_mod, _out, _pat, ...)                                        \
+    if (!game::so::_mod.pattern_scan(_out, _pat, '\xCC' __VA_OPT__(,) __VA_ARGS__)) { \
+      cs2log("Failed to load value by pattern: {}", #_out);                           \
+      return false;                                                                   \
+    }                                                                                 \
+    cs2log("Found value {} by pattern @ {}", #_out, (void *)_out);
 
-  cs2log("D3D.Device:                            {}", (void *)game::d3d_instance->device);
-  cs2log("D3D.DeviceContext:                     {}", (void *)game::d3d_instance->device_context); 
-  cs2log("D3D.SwapChain:                         {}", (void *)game::d3d_instance->info->swapchain);
-  cs2log("HWindow:                               {}", (void *)game::d3d_instance->info->window);
-  cs2log("D3D.DeviceContext->OMSetRenderTargets: {}", reinterpret_cast<void ***>(game::d3d_instance->device_context)[0][33]);
-
+  #include "mlists/patterns.lst"
+  #undef _LOAD_PATTERN
   return true;
 }
 
@@ -68,24 +51,46 @@ static auto init_interface() -> bool {
 }
 
 static auto init_concoms() -> bool {
-  #define _LOAD_CONCOMMAND_FN(x)                                                   \
-    cs2log("Loading concom {}...", #x);                                            \
-    if (game::concom::x = utils::find_concom_callback_str(#x); !game::concom::x) { \
-      cs2log("Failed to load concom {}", #x);                                      \
-      return false;                                                                \
+  #define _LOAD_CONCOMMAND_FN(x)                                               \
+    cs2log("Loading concom {}...", #x);                                        \
+    if (game::concom::x = utils::find_concom_callback(#x); !game::concom::x) { \
+      cs2log("Failed to load concom {}", #x);                                  \
+      return false;                                                            \
     }
 
   #include "mlists/concoms.lst"
   #undef _LOAD_CONCOMMAND_FN
 
-  cs2log("There are {} console commands and variables registered.", game::intf::convar->entries_count);
+  cs2log("There are {} console commands registered.", game::intf::convar->concom_count);
+  return true;
+}
+
+static auto init_convars() -> bool {
+  #define _LOAD_CONVAR(x)                                               \
+    cs2log("Loading convar {}...", #x);                                        \
+    if (game::convar::x = utils::find_convar(#x); !game::convar::x) {          \
+      cs2log("Failed to load convar {}", #x);                                  \
+      return false;                                                            \
+    }
+
+  #include "mlists/convars.lst"
+  #undef _LOAD_CONVAR
+
+  cs2log("There are {} console variables registered.", game::intf::convar->convar_count);
   return true;
 }
 
 auto game::init() -> bool {
   cs2log("Initializing game context...");
-
-  return init_so() && init_patterns() && init_interface() && init_concoms();
+  bool r = init_so() && init_patterns() && init_interface() && init_concoms() && init_convars();
+  if (r) {
+    cs2log("D3D.Device:                            {}", (void *)game::d3d_instance->device);
+    cs2log("D3D.DeviceContext:                     {}", (void *)game::d3d_instance->device_context); 
+    cs2log("D3D.SwapChain:                         {}", (void *)game::d3d_instance->info->swapchain);
+    cs2log("HWindow:                               {}", (void *)game::d3d_instance->info->window);
+    cs2log("D3D.DeviceContext->OMSetRenderTargets: {}", reinterpret_cast<void ***>(game::d3d_instance->device_context)[0][33]);
+  }
+  return r;
 }
 
 auto game::uninit() -> bool {

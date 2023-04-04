@@ -25,12 +25,60 @@ static auto convar_dump() -> void {
   if (!ImGui::BeginTabItem("ConVar"))
     return;
 
+  static char cvarname[256] = {};
+  static void * cvar = nullptr;
+  ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.35);
+  ImGui::InputText("##cs2convarname", cvarname, sizeof(cvarname));
+  ImGui::SameLine();
+  if (ImGui::Button("Find ConVar")) {
+    u64 id = 0;
+    game::intf::convar->find_convar(&id, cvarname, 0);
+    if (!id || id == 0xFFFFFFFF) {
+      cs2log("Invalid ConVar");
+    } else {
+      cvar = game::intf::convar->get_convar_from_id(id);
+      cs2log("Found {} (ID: {:x}) @ {}", cvarname, id, (void *)cvar);
+    }
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Find ConCom")) {
+    u64 id = 0;
+    game::intf::convar->find_concommand(&id, cvarname);
+    if (id == cs2::INVALID_CONCOM_ID) {
+      cs2log("Invalid ConCommand");
+    } else {
+      cvar = game::intf::convar->get_concom_from_id(id);
+      auto * xd = (cs2::concom_data *)cvar;
+      cs2log("Found {} (ID: {:x}) - Callback: {}", cvarname, id, (void *)utils::find_concom_callback_str(cvarname));
+    }
+  }
+
+  ImGui::SameLine();
+  if (ImGui::Button("Find ConVar manually")) {
+    auto * con = utils::find_convar_str(cvarname);
+    if (!con) {
+      cs2log("Invalid ConVar entry");
+    } else {
+      cs2log("Found {} @ {}", cvarname, (void *)con);
+    }
+  }
+
+  ImGui::SameLine();
+  if (ImGui::Button("Find ConCom manually")) {
+    auto * con = utils::find_concom_str(cvarname);
+    if (!con) {
+      cs2log("Invalid ConVar entry");
+    } else {
+      cs2log("Found {} @ {}", cvarname, (void *)con);
+    }
+  }
+
   if (ImGui::Button("Dump convar")) {
     u64 id = 0;
     auto curcvar = *game::intf::convar->iter_convar_first(&id);
     int x = 0;
     while (id != cs2::INVALID_CONVAR_ID) {
-      cs2log("ConVar: {}", game::intf::convar->get_cvar_from_id(id)->name);
+      cs2log("ConVar: {}", game::intf::convar->get_convar_from_id(id)->name);
       curcvar = *game::intf::convar->iter_convar_next(&id, curcvar);
       ++x;
     }
@@ -51,56 +99,25 @@ static auto convar_dump() -> void {
   }
   ImGui::SameLine();
   if (ImGui::Button("Manual dump convar")) {
-    for (int i = 0; i < game::intf::convar->entries_count; ++i) {
-      auto & entry = game::intf::convar->entries[i];
+    for (int i = 0; i < game::intf::convar->convar_count; ++i) {
+      auto & entry = game::intf::convar->convar_entries[i];
       if (entry.data)
-        cs2log("MConVar dump: {}", entry.data->name);
+        cs2log("MConVar dump: {} @ {}", entry.data->name, (void *)entry.data);
       else
         cs2log("MConVar dump at index {} is empty.", i);
     }
   }
 
   ImGui::SameLine();
+  if (ImGui::Button("Manual dump concom")) {
+    for (int i = 0; i < game::intf::convar->concom_count; ++i) {
+      auto & entry = game::intf::convar->concom_entries[i];
+      cs2log("MConCom dump: {} @ {}", entry.name, (void *)&entry);
+    }
+  }
+
+  ImGui::SameLine();
   if (ImGui::Button("Clear##cs2condump")) {
-  }
-  ImGui::SameLine();
-
-  static char cvarname[256] = {};
-  static void * cvar = nullptr;
-  ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.15);
-  ImGui::InputText("##cs2convarname", cvarname, sizeof(cvarname));
-  ImGui::SameLine();
-  if (ImGui::Button("Find ConVar")) {
-    u64 id = 0;
-    game::intf::convar->find_convar(&id, cvarname, 0);
-    if (!id || id == 0xFFFFFFFF) {
-      cs2log("Invalid ConVar");
-    } else {
-      cvar = game::intf::convar->get_cvar_from_id(id);
-      cs2log("Found {} (ID: {:x}) @ {}", cvarname, id, (void *)cvar);
-    }
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Find ConCom")) {
-    u64 id = 0;
-    game::intf::convar->find_concommand(&id, cvarname);
-    if (id == cs2::INVALID_CONCOM_ID) {
-      cs2log("Invalid ConCommand");
-    } else {
-      cvar = game::intf::convar->get_concom_from_id(id);
-      auto * xd = (cs2::concom_data *)cvar;
-      cs2log("Found {} (ID: {:x}) - Callback: {}", cvarname, id, (void *)utils::find_concom_callback_str(cvarname));
-    }
-  }
-
-  ImGui::SameLine();
-  if (ImGui::Button("Find entry")) {
-    auto * con = utils::find_con_str(cvarname);
-    if (!con) {
-      cs2log("Invalid ConVar entry");
-    } else {
-      cs2log("Found {} @ {}", cvarname, (void *)con);
-    }
   }
 
   ImGui::EndTabItem();

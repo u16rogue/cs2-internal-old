@@ -66,14 +66,11 @@ def_hk(bool, cs2_engine_get_sv_cheats_flag) {
 }
 
 def_hk(void *, cs2_client_get_cvar_pvalue, cs2::convar_proxy * cvar, int flag) {
-  // TODO: use caching again string comp sucks
-  if (global::test::force_sv_cheats && std::string_view(cvar->data->name) == "sv_cheats") {
+  if (global::test::force_sv_cheats && cvar->data == game::convar::sv_cheats) {
     return &global::test::force_sv_cheats_state;
   }
 
-  static cs2::convar_data * imgui_enable_input = utils::find_con("imgui_enable_input");
-  static cs2::convar_data * imgui_enable = utils::find_con("imgui_enable");
-  if (menu::is_open() && (cvar->data == imgui_enable_input || cvar->data == imgui_enable)) {
+  if (menu::is_open() && (cvar->data == game::convar::imgui_enable_input || cvar->data == game::convar::imgui_enable)) {
     static bool xd = true;
     return &xd;
   }
@@ -82,8 +79,7 @@ def_hk(void *, cs2_client_get_cvar_pvalue, cs2::convar_proxy * cvar, int flag) {
 }
 
 def_hk(void, cs2_client_set_cvar_value, cs2::convar_proxy * cvar, u64 flag, u64 value) {
-  static cs2::convar_data * stats_display = utils::find_con("stats_display");
-  if (menu::is_open() && cvar->data == stats_display && value == 5) {
+  if (menu::is_open() && cvar->data == game::convar::stats_display && value == 5) {
     value = 0;
   }
   return cs2_client_set_cvar_value(cvar, flag, value);

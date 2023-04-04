@@ -1,0 +1,1 @@
+_LOAD_PATTERN(rendersystem, game::d3d_instance.ptr, "\x48\x8B\x0D\xCC\xCC\xCC\xCC\x44\x8B\xCB\x45\x8B\xC7", mem::rel2abs<3>())

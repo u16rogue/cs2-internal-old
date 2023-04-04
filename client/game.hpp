@@ -42,3 +42,11 @@ using concomfn_t = void(*)(void);
 #undef _LOAD_CONCOMMAND_FN
 
 } // game::concom
+
+namespace game::convar {
+
+#define _LOAD_CONVAR(x) inline cs2::convar_data * x = nullptr;
+#include "mlists/convars.lst"
+#undef _LOAD_CONVAR
+
+} // game::convar
