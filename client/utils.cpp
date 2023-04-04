@@ -1,11 +1,13 @@
 #include "utils.hpp"
 #include "client/cs2/convar.hpp"
+#include "client/utils.hpp"
 #include <Windows.h>
+#include <Psapi.h>
 #include <common/types.hpp>
 #include <common/logging.hpp>
 #include <client/game.hpp>
 
-auto utils::find_com(std::string_view name) -> cs2::convar_data * {
+auto utils::find_con(mpp::cmphstr name) -> cs2::convar_data * {
   for (int i = 0; i < game::intf::convar->entries_count; ++i) {
     auto & entry = game::intf::convar->entries[i];
     if (name == entry.data->name)
@@ -14,19 +16,49 @@ auto utils::find_com(std::string_view name) -> cs2::convar_data * {
   return nullptr;
 }
 
-auto utils::find_concom(std::string_view concom) -> cs2::concom_data * {
+auto utils::find_con_str(std::string_view name) -> cs2::convar_data * {
+  for (int i = 0; i < game::intf::convar->entries_count; ++i) {
+    auto & entry = game::intf::convar->entries[i];
+    if (name == entry.data->name)
+      return entry.data;
+  }
+  return nullptr;
+}
+
+static auto get_concom_callback(cs2::concom_data * concom) -> void(*)(void) {
+  if (!concom)
+    return nullptr;
+  auto & entry = game::intf::convar->callbacks[concom->cb_id];
+  if (!entry.data)
+    return nullptr;
+
+  void * out = nullptr;
+  if (entry.flag & cs2::CONVAR_CALLBACK_ENTRY_FLAG_RECEIVES_ARGS) 
+    out = **reinterpret_cast<void ***>(entry.data);
+  else if (entry.flag & cs2::CONVAR_CALLBACK_ENTRY_FLAG_NO_ARGS || entry.flag & cs2::CONVAR_CALLBACK_ENTRY_FLAG_ONE_ARG)
+    out = entry.data;
+  else
+    out = entry.data;
+  return reinterpret_cast<void(*)(void)>(out);
+}
+
+#if 0
+auto utils::find_concom_callback(mpp::cmphstr name) -> void(*)(void) {
+  cs2::concom_data * concom = reinterpret_cast<cs2::concom_data *>(find_con(name));
+  return get_concom_callback(concom);
+}
+#endif
+
+auto utils::find_concom_callback_str(std::string_view name) -> void(*)(void) {
+  return get_concom_callback(find_concom_str(name));
+}
+
+auto utils::find_concom_str(std::string_view concom) -> cs2::concom_data * {
   cs2::concom_id_t id = 0;
   game::intf::convar->find_concommand(&id, concom.data());
   if (id == cs2::INVALID_CONCOM_ID)
     return nullptr;
   return game::intf::convar->get_concom_from_id(id);
-}
-
-auto utils::find_concom_callback(std::string_view concom) -> void(*)(void) {
-  cs2::concom_data * d = find_concom(concom);
-  if (!d)
-    return nullptr;
-  return reinterpret_cast<void(*)(void)>(game::intf::convar->_get_concom_callback(d));
 }
 
 utils::solib::solib(void * base)
@@ -38,6 +70,20 @@ auto utils::solib::acquire_intf_root() -> bool {
 
   intf_root = get_module_interface_linkedlist(base);
   return intf_root;
+}
+
+auto utils::solib::get_size() -> usize {
+  if (!base)
+    return 0;
+
+  if (size == -1) {
+    MODULEINFO mi {};
+    if (!GetModuleInformation(GetCurrentProcess(), HMODULE(base), &mi, sizeof(mi))) {
+      return 0;
+    }
+    size = mi.SizeOfImage;
+  }
+  return size;
 }
 
 auto utils::solib::create_interface(mpp::cmphstr str) -> void * {

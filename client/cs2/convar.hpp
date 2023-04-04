@@ -114,25 +114,6 @@ public:
   }
 
 public:
-  // TODO: move these to cpp
-  inline auto _get_concom_callback_entry(concom_data * concom) -> convar_callback_entry_t * {
-    return &callbacks[concom->cb_id];
-  }
-
-  inline auto _get_concom_callback(concom_data * concom) -> void * {
-    // udiff offset = concom->cb_id << 5;
-    auto & entry = callbacks[concom->cb_id];
-    if (!entry.data)
-      return nullptr;
-
-    if (entry.flag & CONVAR_CALLBACK_ENTRY_FLAG_RECEIVES_ARGS) 
-      return **reinterpret_cast<void ***>(entry.data);
-    else if (entry.flag & CONVAR_CALLBACK_ENTRY_FLAG_NO_ARGS || entry.flag & CONVAR_CALLBACK_ENTRY_FLAG_ONE_ARG)
-      return entry.data;
-
-    return entry.data;
-  }
-
   u8  __pad0[0x40];
   convar_reg_entry_t * entries; // [2/04/2023] Can find this by looking at iter_convar_next
   u8  __pad1[0x28];

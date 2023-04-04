@@ -27,6 +27,8 @@ add_library(
   "cs2/interface.cpp"
   "cs2/cutl.hpp"
   "cs2/cutl.cpp"
+  "cs2/inputservice.hpp"
+  "cs2/inputservice.cpp"
 )
 
 set_target_properties(

@@ -8,9 +8,14 @@
 
 namespace utils {
 
-auto find_com(std::string_view name) -> cs2::convar_data *;
-auto find_concom(std::string_view concom) -> cs2::concom_data *;
-auto find_concom_callback(std::string_view concom) -> void(*)(void);
+auto find_con(mpp::cmphstr name) -> cs2::convar_data *;
+#if 0 // TODO: fix this by figuring out how concoms are stored
+auto find_concom_callback(mpp::cmphstr concom) -> void(*)(void);
+#endif
+
+auto find_con_str(std::string_view name) -> cs2::convar_data *;
+auto find_concom_callback_str(std::string_view concom) -> void(*)(void);
+auto find_concom_str(std::string_view concom) -> cs2::concom_data *;
 
 struct interface_iterator {
   interface_iterator(cs2::intfreg * root);
@@ -33,6 +38,13 @@ struct solib {
 
   operator bool() const;
 
+  template <typename T = void *>
+  auto get_base() -> T {
+    return reinterpret_cast<T>(base);
+  }
+
+  auto get_size() -> usize;
+
   auto create_interface(mpp::cmphstr str) -> void *;
   auto create_interface_partial(mpp::cmphstr_partial str) -> void *;
 
@@ -42,7 +54,9 @@ private:
   auto acquire_intf_root() -> bool;
 
 private:
-  void * base;
+  void * base = nullptr;
+  usize  size = -1;
+
   cs2::intfreg * intf_root = nullptr;
 }; // solib
 

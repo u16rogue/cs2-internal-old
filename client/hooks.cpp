@@ -30,14 +30,6 @@
 #include <client/game.hpp>
 #include <client/menu/menu.hpp>
 
-#define make_module_info(id, nm)                                      \
-  auto [id, id##_sz] = common::utils::module_info(nm);                \
-  if (!id || !id##_sz) {                                              \
-    cs2log(nm " not found.");                                         \
-    return false;                                                     \
-  }                                                                   \
-  cs2log(nm " @ {} ({} bytes)", reinterpret_cast<void *>(id), id##_sz)
-
 #define def_hk(rt, nm, ...)                \
   static rt(*nm)(__VA_ARGS__) = nullptr;   \
   static auto __hk_##nm(__VA_ARGS__) -> rt
@@ -79,8 +71,8 @@ def_hk(void *, cs2_client_get_cvar_pvalue, cs2::convar_proxy * cvar, int flag) {
     return &global::test::force_sv_cheats_state;
   }
 
-  static cs2::convar_data * imgui_enable_input = utils::find_com("imgui_enable_input");
-  static cs2::convar_data * imgui_enable = utils::find_com("imgui_enable");
+  static cs2::convar_data * imgui_enable_input = utils::find_con("imgui_enable_input");
+  static cs2::convar_data * imgui_enable = utils::find_con("imgui_enable");
   if (menu::is_open() && (cvar->data == imgui_enable_input || cvar->data == imgui_enable)) {
     static bool xd = true;
     return &xd;
@@ -90,7 +82,7 @@ def_hk(void *, cs2_client_get_cvar_pvalue, cs2::convar_proxy * cvar, int flag) {
 }
 
 def_hk(void, cs2_client_set_cvar_value, cs2::convar_proxy * cvar, u64 flag, u64 value) {
-  static cs2::convar_data * stats_display = utils::find_com("stats_display");
+  static cs2::convar_data * stats_display = utils::find_con("stats_display");
   if (menu::is_open() && cvar->data == stats_display && value == 5) {
     value = 0;
   }
@@ -350,8 +342,8 @@ auto hooks::install() -> bool {
     return false;
   }
 
-  make_module_info(client, "client.dll");
-  make_module_info(engine, "engine2.dll");
+  u8 * client = game::so::client.get_base<u8 *>();
+  u8 * engine = game::so::engine.get_base<u8 *>();
 
   cs2log("Hooking cs2_spec_glow...");
   if (!create_hk(cs2_spec_glow, client + 0x77A470)) {

@@ -17,33 +17,27 @@ auto _deduce_T_pattern_scan(T & out, void * start, usize size, const char (&patt
   return out;
 }
 
-#define make_module_info(id, nm)                                      \
-  auto [id, id##_sz] = common::utils::module_info(nm);                \
-  if (!id || !id##_sz) {                                              \
-    cs2log(nm " not found.");                                         \
-    return false;                                                     \
-  }                                                                   \
-  cs2log(nm " @ {} ({} bytes)", reinterpret_cast<void *>(id), id##_sz)
-
 #define w_pattern_scan(out, id, pattern, ...)                                         \
-  if (!_deduce_T_pattern_scan(out, id, id##_sz, pattern __VA_OPT__(,) __VA_ARGS__)) { \
+  if (!_deduce_T_pattern_scan(out, game::so::id.get_base<>(), game::so::id.get_size(), pattern __VA_OPT__(,) __VA_ARGS__)) { \
     cs2log(#out "not found.");                                                        \
     return false;                                                                     \
   }                                                                                   \
   cs2log(#out " found @ {}", reinterpret_cast<void *>(out))
 
-static auto init_shared_objects() -> bool {
-  game::so::tier0 = GetModuleHandleA("tier0.dll");
-  if (!game::so::tier0) {
-    cs2log("tier0.dll not found.");
-    return false;
-  }
+static auto init_so() -> bool {
+  #define _LOAD_SO(_d, _n)                                      \
+    if (game::so::_d = GetModuleHandleA(_n); !game::so::_d) {   \
+      cs2log("Failed to load so " _n);                          \
+      return false;                                             \
+    }                                                           \
+    cs2log("SO loaded {} @ {}", _n, game::so::_d.get_base<>());
 
+  #include "mlists/so.lst"
+  #undef _LOAD_SO
   return true;
 }
 
 static auto init_patterns() -> bool {
-  make_module_info(rendersystem, "rendersystemdx11.dll");
   w_pattern_scan(
       game::d3d_instance.ptr,
       rendersystem,
@@ -63,7 +57,7 @@ static auto init_patterns() -> bool {
 static auto init_interface() -> bool {
   #define _LOAD_INTERFACE(_m, _t, _n, _id) \
   if (game::intf::_n = reinterpret_cast<_t *>(game::so::_m.create_interface(_id)); !game::intf::_n) { \
-    cs2log("Failed to create interface for " _id);                                                    \
+    cs2log("Failed to create interface for {}", _id);                                                 \
     return false;                                                                                     \
   }                                                                                                   \
   cs2log(_id " @ {}", (void *)game::intf::_n);
@@ -74,11 +68,11 @@ static auto init_interface() -> bool {
 }
 
 static auto init_concoms() -> bool {
-  #define _LOAD_CONCOMMAND_FN(x)                                               \
-    cs2log("Loading concom " #x "...");                                        \
-    if (game::concom::x = utils::find_concom_callback(#x); !game::concom::x) { \
-      cs2log("Failed to load concom " #x);                                     \
-      return false;                                                            \
+  #define _LOAD_CONCOMMAND_FN(x)                                                   \
+    cs2log("Loading concom {}...", #x);                                            \
+    if (game::concom::x = utils::find_concom_callback_str(#x); !game::concom::x) { \
+      cs2log("Failed to load concom {}", #x);                                      \
+      return false;                                                                \
     }
 
   #include "mlists/concoms.lst"
@@ -91,7 +85,7 @@ static auto init_concoms() -> bool {
 auto game::init() -> bool {
   cs2log("Initializing game context...");
 
-  return init_shared_objects() && init_patterns() && init_interface() && init_concoms();
+  return init_so() && init_patterns() && init_interface() && init_concoms();
 }
 
 auto game::uninit() -> bool {

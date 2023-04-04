@@ -1,7 +1,10 @@
 #pragma once
 
 #include <client/cs2/structs.hpp>
+
 #include <client/cs2/convar.hpp>
+#include <client/cs2/inputservice.hpp>
+
 #include <client/utils.hpp>
 #include <common/utils.hpp>
 
@@ -17,10 +20,9 @@ auto uninit() -> bool;
 
 namespace game::so /* shared object aka dll aka modules */ {
 
-inline utils::solib client;
-inline utils::solib engine;
-inline utils::solib tier0;
-inline utils::solib rendersystem;
+#define _LOAD_SO(_d, _n) inline utils::solib _d;
+#include "mlists/so.lst"
+#undef _LOAD_SO
 
 } // game::so
 

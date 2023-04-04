@@ -89,15 +89,15 @@ static auto convar_dump() -> void {
     } else {
       cvar = game::intf::convar->get_concom_from_id(id);
       auto * xd = (cs2::concom_data *)cvar;
-      cs2log("Found {} (ID: {:x}) - Callback: {}", cvarname, id, game::intf::convar->_get_concom_callback(xd));
+      cs2log("Found {} (ID: {:x}) - Callback: {}", cvarname, id, (void *)utils::find_concom_callback_str(cvarname));
     }
   }
 
   ImGui::SameLine();
   if (ImGui::Button("Find entry")) {
-    auto * con = utils::find_com(cvarname);
+    auto * con = utils::find_con_str(cvarname);
     if (!con) {
-      cs2log("Invalid ConCommand");
+      cs2log("Invalid ConVar entry");
     } else {
       cs2log("Found {} @ {}", cvarname, (void *)con);
     }
