@@ -196,6 +196,13 @@ static auto test_features() -> void {
     game::concom::thirdperson();
   }
 
+  static char cmd[256] = {};
+  ImGui::InputText("##cs2cmd", cmd, sizeof(cmd));
+  ImGui::SameLine();
+  if (ImGui::Button("Execute Command##cs2")) {
+    utils::cmd(cmd);
+  }
+
   ImGui::EndTabItem();
 }
 

@@ -9,6 +9,8 @@
 
 namespace utils {
 
+auto cmd(std::string_view s) -> void;
+
 auto find_convar(mpp::cmphstr name) -> cs2::convar_data *;
 auto find_convar_str(std::string_view name) -> cs2::convar_data *;
 

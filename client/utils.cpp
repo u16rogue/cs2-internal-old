@@ -7,6 +7,10 @@
 #include <common/logging.hpp>
 #include <client/game.hpp>
 
+auto utils::cmd(std::string_view s) -> void {
+  game::intf::inputservice->client_cmd(0, s.data(), 0);
+}
+
 auto utils::find_convar(mpp::cmphstr name) -> cs2::convar_data * {
   for (int i = 0; i < game::intf::convar->convar_count; ++i) {
     auto & entry = game::intf::convar->convar_entries[i];
