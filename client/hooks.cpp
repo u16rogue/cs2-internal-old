@@ -39,6 +39,13 @@
 
 // ---------------------------------------------------------------------------------------------------- 
 
+def_hk(bool, cs2_can_send_packet, void * self) {
+  if (GetAsyncKeyState(VK_DELETE)) {
+    return false;
+  }
+  return cs2_can_send_packet(self);
+}
+
 def_hk(bool, cs2_spec_glow, void * unk1, void * unk2, i64 unk3, float * unk4, float * unk5, float * unk6, float * unk7, float * unk8, bool * unk9) {
   bool r = cs2_spec_glow(unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8, unk9);
   if (global::test::glow) {
@@ -83,6 +90,15 @@ def_hk(void, cs2_client_set_cvar_value, cs2::convar_proxy * cvar, u64 flag, u64 
     value = 0;
   }
   return cs2_client_set_cvar_value(cvar, flag, value);
+}
+
+def_hk(void, cs2_client_setup_draw_smoke, u8 * self) {
+  if (global::test::no_smoke) {
+    // *reinterpret_cast<u64 *>(self + 0x14) = 0;
+    // *reinterpret_cast<u64 *>(self + 0x18) = 0;
+    return;
+  }
+  return cs2_client_setup_draw_smoke(self);
 }
 
 // ---------------------------------------------------------------------------------------------------- 
@@ -340,6 +356,7 @@ auto hooks::install() -> bool {
 
   u8 * client = game::so::client.get_base<u8 *>();
   u8 * engine = game::so::engine.get_base<u8 *>();
+  u8 * netsys = game::so::netsys.get_base<u8 *>();
 
   cs2log("Hooking cs2_spec_glow...");
   if (!create_hk(cs2_spec_glow, client + 0x77A470)) {
@@ -370,6 +387,18 @@ auto hooks::install() -> bool {
     cs2log("Failed to hook cs2_engine_get_sv_cheats_flag");
     return false;
   } 
+
+  cs2log("Hooking cs2_client_setup_draw_smoke...");
+  if (!create_hk(cs2_client_setup_draw_smoke, client + 0x41BC00)) {
+    cs2log("Failed to hook cs2_client_setup_draw_smoke");
+    return false;
+  }
+
+  cs2log("Hooking cs2_can_send_packet...");
+  if (!create_hk(cs2_can_send_packet, netsys + 0x7F660)) {
+    cs2log("Failed to hook cs2_can_send_packet");
+    return false;
+  }
  
   if (!prep_render()) {
     return false;

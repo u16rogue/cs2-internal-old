@@ -67,10 +67,10 @@ static auto init_concoms() -> bool {
 
 static auto init_convars() -> bool {
   #define _LOAD_CONVAR(x)                                               \
-    cs2log("Loading convar {}...", #x);                                        \
-    if (game::convar::x = utils::find_convar(#x); !game::convar::x) {          \
-      cs2log("Failed to load convar {}", #x);                                  \
-      return false;                                                            \
+    cs2log("Loading convar {}...", #x);                                 \
+    if (game::convar::x = utils::find_convar(#x); !game::convar::x) {   \
+      cs2log("Failed to load convar {}", #x);                           \
+      return false;                                                     \
     }
 
   #include "mlists/convars.lst"
@@ -84,6 +84,9 @@ auto game::init() -> bool {
   cs2log("Initializing game context...");
   bool r = init_so() && init_patterns() && init_interface() && init_concoms() && init_convars();
   if (r) {
+    game::client_get_entity_by_index = reinterpret_cast<decltype(game::client_get_entity_by_index)>(game::so::client.get_base<u8 *>() + 0x612290);
+    cs2log("game::client_get_entity_by_index @ {}", (void *)game::client_get_entity_by_index);
+
     cs2log("D3D.Device:                            {}", (void *)game::d3d_instance->device);
     cs2log("D3D.DeviceContext:                     {}", (void *)game::d3d_instance->device_context); 
     cs2log("D3D.SwapChain:                         {}", (void *)game::d3d_instance->info->swapchain);

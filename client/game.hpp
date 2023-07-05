@@ -4,6 +4,7 @@
 
 #include <client/cs2/convar.hpp>
 #include <client/cs2/inputservice.hpp>
+#include <client/cs2/entity.hpp>
 
 #include <client/utils.hpp>
 #include <common/utils.hpp>
@@ -11,6 +12,7 @@
 namespace game {
 
 inline common::utils::lazy_arrow<cs2::d3d_instance, 2> d3d_instance = nullptr;
+inline cs2::entity *(*client_get_entity_by_index)(int) = nullptr; // 
 
 auto init() -> bool;
 auto uninit() -> bool;

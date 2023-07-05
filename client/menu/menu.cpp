@@ -51,6 +51,8 @@ auto menu::imgui_render() -> void {
   fg->AddText(ImVec2(3.f, 3.f), 0xFF000000, CS2_EXTERNAL_NAME);
   fg->AddText(ImVec2(2.f, 2.f), 0xFFFFFFFF, CS2_EXTERNAL_NAME);
 
+  tabs::on_imgui();
+
   if (!menu_open)
     return;
 

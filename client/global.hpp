@@ -15,6 +15,8 @@ inline float force_fov = -1.f;
 inline bool force_sv_cheats = false;
 inline bool force_sv_cheats_state = true;
 
+inline bool no_smoke = false;
+
 } // global::test
 
 } // global

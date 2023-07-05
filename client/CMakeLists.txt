@@ -29,6 +29,10 @@ add_library(
   "cs2/cutl.cpp"
   "cs2/inputservice.hpp"
   "cs2/inputservice.cpp"
+  "cs2/vecang.hpp"
+  "cs2/vecang.cpp"
+  "cs2/entity.hpp"
+  "cs2/entity.cpp"
 )
 
 set_target_properties(

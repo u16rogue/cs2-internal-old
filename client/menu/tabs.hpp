@@ -20,6 +20,14 @@ struct _tabs_dispatcher {
     }(), ...);
   }
 
+  static auto on_imgui() -> void {
+    ([](){
+      if constexpr (requires { tabs::on_imgui(); }) {
+        tabs::on_imgui();
+      }
+    }(), ...);
+  }
+
 };
 } // details
 

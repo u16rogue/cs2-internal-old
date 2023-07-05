@@ -1,5 +1,6 @@
 #include "debug.hpp"
 #include "client/cs2/convar.hpp"
+#include "client/cs2/vecang.hpp"
 #include "client/game.hpp"
 #include "client/global.hpp"
 
@@ -177,6 +178,7 @@ static auto interface_dump() -> void {
   ImGui::EndTabItem();
 }
 
+static bool show_localplayer_test_window = true;
 static auto test_features() -> void {
   if (!ImGui::BeginTabItem("Test features"))
     return;
@@ -203,7 +205,27 @@ static auto test_features() -> void {
     utils::cmd(cmd);
   }
 
+  ImGui::Checkbox("No smoke", &global::test::no_smoke);
+  ImGui::Checkbox("Debug Localplayer info test window thing", &show_localplayer_test_window);
+
   ImGui::EndTabItem();
+}
+
+auto menu::tab::debug_tab::on_imgui() -> void {
+  if (!show_localplayer_test_window)
+    return;
+
+  auto ent = game::client_get_entity_by_index(0);
+  if (!ent)
+    return;
+  cs2::vec3 pos;
+  cs2::ang3 ang;
+  ent->get_eyepos(&pos);
+  ent->get_viewangles(&ang);
+  ImGui::Begin("Local Entity test");
+  ImGui::Text("EyePos: %f, %f, %f", pos.x, pos.y, pos.z);
+  ImGui::Text("Angle: %f, %f, %f", ang.pitch, ang.yaw, ang.roll);
+  ImGui::End();
 }
 
 auto menu::tab::debug_tab::on_menu_tab() -> void {
